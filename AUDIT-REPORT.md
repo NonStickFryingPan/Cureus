@@ -68,11 +68,11 @@
 **Files:** `.env` (tracked in git), `.gitignore`  
 **Exposed secrets:**
 ```
-VITE_SUPABASE_URL          → https://hgtaufkeujqfckippetz.supabase.co
-VITE_SUPABASE_ANON_KEY     → sb_publishable_1MtgLRKCGXkF5dg7z_kZ0w_SF5iODRC
-VITE_TMDB_ACCESS_TOKEN     → eyJhbGciOiJIUzI1NiJ9... (JWT Bearer)
-VITE_ADMIN_EMAIL           → admin@cureus.local
-VITE_ADMIN_PASSWORD        → fU86E9f#vSRu#w
+VITE_SUPABASE_URL          → https://[REDACTED].supabase.co
+VITE_SUPABASE_ANON_KEY     → [REDACTED]
+VITE_TMDB_ACCESS_TOKEN     → [REDACTED]
+VITE_ADMIN_EMAIL           → [REDACTED]
+VITE_ADMIN_PASSWORD        → [REDACTED]
 ```
 **Impact:** Anyone with repo access (past or present) can authenticate as admin, read/write the Supabase database, and use the TMDB API on the project's behalf. Even adding `.env` to `.gitignore` now does not remove secrets from prior commits.
 
