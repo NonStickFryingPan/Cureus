@@ -1,8 +1,8 @@
-# P: Cureus | SCOPE: Retro Paint-style Curated Review Site | STATE: ACTIVE — v3 is Pro, master is Backup
+# P: Cureus | SCOPE: Retro Paint-style Curated Review Site | STATE: ACTIVE — v3 is Prod, master is Backup
 LAST: Refined TMDB curation search autocomplete, implemented custom NSFW/adult screening filter, cleaned 14 database entries, and resolved Netlify secrets scanning build errors.
 NEXT: Add administrative customization features and monitor automated subagent content flows.
 
-## Core Accomplishments (v3 Pro)
+## Core Accomplishments (v3 Prod)
 * **Favicon Integration**: Added inline wobbly SVG Paint Palette favicon to `index.html`.
 * **Dashboard Autocomplete**: Enhanced `src/admin.js` to dynamically pre-fetch database records and use type-safe checks to render custom dashed-border `[CURATED]` badges for searched movies.
 * **Curation Form Edit-Mode**: Auto-fills the curation form with existing reviews and ratings on click, transitioning the editor panel via a gold transition flash.
