@@ -316,6 +316,13 @@ function setupSearchActions() {
     resultsContainer.innerHTML = '';
     
     try {
+      // Ensure we have the absolute latest database reviews before rendering search results
+      try {
+        currentReviews = await fetchReviews();
+      } catch (dbErr) {
+        console.warn('Failed to refresh reviews for curation check:', dbErr);
+      }
+
       const tmdbToken = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
       if (!tmdbToken) throw new Error('VITE_TMDB_ACCESS_TOKEN is missing in environment variables.');
       
@@ -353,34 +360,73 @@ function setupSearchActions() {
         const card = document.createElement('div');
         card.className = 'search-card';
         card.id = cardId;
+
+        // Check if this movie has already been curated in the library (using type-safe comparison)
+        const existing = currentReviews.find(r => Number(r.tmdb_id) === Number(item.id));
+        const badge = existing 
+          ? `<span class="curated-badge" style="background: #ece9d8; border: 1px dashed #808080; font-size: 0.75rem; padding: 1px 4px; font-weight: bold; color: #800000; margin-left: 8px; font-family: monospace;">[CURATED]</span>` 
+          : '';
+        
+        if (existing) {
+          card.style.backgroundColor = '#f4f2ea';
+          card.style.border = '1px dashed #808080';
+        }
         
         card.innerHTML = `
-          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(posterPath)}" alt="Poster">
+          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(posterPath)}" alt="Poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2292%22 height=%22138%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23ccc%22/></svg>'">
           <div class="search-card-info">
-            <div class="search-card-title">${escapeHtml(title)}</div>
+            <div class="search-card-title">${escapeHtml(title)}${badge}</div>
             <div class="search-card-meta">MOVIE | Release: ${escapeHtml(year)}</div>
             <div class="search-card-meta">TMDB ID: ${escapeHtml(item.id)}</div>
           </div>
         `;
         
-        // Click to auto-fill form
+        // Click to auto-fill form (Edit existing review or Create a new one)
         card.addEventListener('click', () => {
-          document.getElementById('form-type').value = 'movie';
-          document.getElementById('form-title').value = title;
-          document.getElementById('form-tmdb-id').value = item.id;
-          document.getElementById('form-year').value = year !== 'N/A' ? year : '';
-          document.getElementById('form-poster').value = posterPath;
-          
-          // Map genre names
-          const genreNames = item.genre_ids
-            ? item.genre_ids.map(id => TMDB_GENRES[id]).filter(Boolean)
-            : [];
-          document.getElementById('form-genres').value = genreNames.join(', ');
-          
-          // Flash form background to indicate autofill succeeded
           const formSec = document.querySelector('.admin-form-container');
-          formSec.style.transition = 'background-color 0.1s';
-          formSec.style.backgroundColor = '#90ee90';
+          
+          if (existing) {
+            // Populate form with existing curated review for editing
+            document.getElementById('form-review-id').value = existing.id;
+            document.getElementById('form-type').value = 'movie';
+            document.getElementById('form-title').value = existing.title;
+            document.getElementById('form-tmdb-id').value = existing.tmdb_id;
+            document.getElementById('form-year').value = existing.year || '';
+            document.getElementById('form-poster').value = existing.poster;
+            document.getElementById('form-genres').value = existing.genres ? existing.genres.join(', ') : '';
+            document.getElementById('form-rating').value = existing.rating;
+            document.getElementById('form-reviewer').value = existing.reviewer;
+            document.getElementById('form-review').value = existing.review;
+            document.getElementById('btn-form-save').textContent = '💾 Update Review';
+            
+            // Flash a gold color to alert the administrator of "Edit Mode"
+            formSec.style.transition = 'background-color 0.1s';
+            formSec.style.backgroundColor = '#ffd700';
+          } else {
+            // Populate form with TMDB metadata to create a new review
+            document.getElementById('form-review-id').value = '';
+            document.getElementById('form-type').value = 'movie';
+            document.getElementById('form-title').value = title;
+            document.getElementById('form-tmdb-id').value = item.id;
+            document.getElementById('form-year').value = year !== 'N/A' ? year : '';
+            document.getElementById('form-poster').value = posterPath;
+            
+            // Map genre names
+            const genreNames = item.genre_ids
+              ? item.genre_ids.map(id => TMDB_GENRES[id]).filter(Boolean)
+              : [];
+            document.getElementById('form-genres').value = genreNames.join(', ');
+            
+            document.getElementById('form-rating').value = '5';
+            document.getElementById('form-reviewer').value = '';
+            document.getElementById('form-review').value = '';
+            document.getElementById('btn-form-save').textContent = '💾 Save Review';
+            
+            // Flash green for successful new autofill
+            formSec.style.transition = 'background-color 0.1s';
+            formSec.style.backgroundColor = '#90ee90';
+          }
+          
           setTimeout(() => {
             formSec.style.backgroundColor = 'var(--paint-canvas)';
           }, 300);
