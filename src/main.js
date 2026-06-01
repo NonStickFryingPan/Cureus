@@ -4,7 +4,7 @@ import { supabase } from './supabase.js';
 let allReviews = [];
 let filteredReviews = [];
 let currentGenre = null;
-let activeTool = 'pencil'; // pencil, spray, eraser
+let activeTool = 'cursor'; // default pointer
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
@@ -64,12 +64,14 @@ function setupHashRouter() {
     const hash = window.location.hash;
     const feedView = document.getElementById('feed-view');
     const adminView = document.getElementById('admin-view');
+    const aboutView = document.getElementById('about-view');
     const sidebar = document.getElementById('toolbox');
     const palette = document.getElementById('palette-bar');
     
     if (hash === '#admin') {
       feedView.style.display = 'none';
       adminView.style.display = 'block';
+      aboutView.style.display = 'none';
       sidebar.style.display = 'none';
       palette.style.display = 'none';
       
@@ -77,9 +79,16 @@ function setupHashRouter() {
       import('./admin.js').then((m) => {
         if (m.initAdmin) m.initAdmin();
       });
+    } else if (hash === '#about') {
+      feedView.style.display = 'none';
+      adminView.style.display = 'none';
+      aboutView.style.display = 'block';
+      sidebar.style.display = 'none';
+      palette.style.display = 'none';
     } else {
       feedView.style.display = 'block';
       adminView.style.display = 'none';
+      aboutView.style.display = 'none';
       sidebar.style.display = 'grid';
       palette.style.display = 'flex';
       
@@ -121,13 +130,21 @@ function setupCanvasBoard() {
   window.addEventListener('resize', resize);
   setTimeout(resize, 200);
 
+  let startX = 0;
+  let startY = 0;
+  let savedImageState = null;
+
   // Drawing mouse handlers
   const startDraw = (e) => {
     if (e.button !== 0) return; // Left click only
     isDrawing = true;
     const rect = canvas.getBoundingClientRect();
-    lastX = e.clientX - rect.left;
-    lastY = e.clientY - rect.top;
+    startX = lastX = e.clientX - rect.left;
+    startY = lastY = e.clientY - rect.top;
+    
+    if (activeTool === 'rect') {
+      savedImageState = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
   };
 
   const draw = (e) => {
@@ -155,6 +172,15 @@ function setupCanvasBoard() {
         const sy = y + Math.sin(angle) * radius;
         ctx.fillRect(sx, sy, 1, 1);
       }
+    } else if (activeTool === 'rect') {
+      // Preview rectangle shape
+      if (savedImageState) {
+        ctx.putImageData(savedImageState, 0, 0);
+      }
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.rect(startX, startY, x - startX, y - startY);
+      ctx.stroke();
     } else if (activeTool === 'eraser') {
       // Clear screen rectangle
       ctx.clearRect(x - 10, y - 10, 20, 20);
@@ -178,16 +204,23 @@ function setupCanvasBoard() {
 // --- Sidebar Toolbar Actions ---
 function setupToolbar() {
   const tools = {
+    'tool-cursor': 'cursor',
     'tool-pencil': 'pencil',
     'tool-spray': 'spray',
+    'tool-rect': 'rect',
     'tool-eraser': 'eraser'
   };
 
   const canvas = document.getElementById('scribble-board');
   const container = document.getElementById('canvas-container');
 
+  // Disable pointer-events by default (since cursor is active tool initially)
+  canvas.style.pointerEvents = 'none';
+  container.className = ''; // default cursor
+
   Object.entries(tools).forEach(([id, name]) => {
     const btn = document.getElementById(id);
+    if (!btn) return;
     btn.addEventListener('click', () => {
       // Toggle active class
       document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
@@ -199,9 +232,14 @@ function setupToolbar() {
       if (name === 'pencil') container.classList.add('cursor-pencil');
       else if (name === 'spray') container.classList.add('cursor-spray');
       else if (name === 'eraser') container.classList.add('cursor-eraser');
+      else if (name === 'rect') container.classList.add('cursor-rect');
       
-      // Enable canvas pointer-events
-      canvas.style.pointerEvents = 'auto';
+      // Toggle pointer-events on the canvas overlay
+      if (name === 'cursor') {
+        canvas.style.pointerEvents = 'none';
+      } else {
+        canvas.style.pointerEvents = 'auto';
+      }
     });
   });
 
@@ -235,20 +273,18 @@ function setupMenuActions() {
     clearCanvas();
   });
 
-  document.getElementById('btn-menu-about').addEventListener('click', () => {
-    alert(
-      "🎨 Cureus Paint — Curated Movie & TV Reviews\n" +
-      "------------------------------------------\n" +
-      "• Desktop-Only Cinematic Feed\n" +
-      "• MS Paint 90s mouse-drawn parody aesthetic\n" +
-      "• client-side shuffle (unseen reviews first!)\n" +
-      "• Stream directly in-place via VidKing\n\n" +
-      "Use your cursor to draw doodles or erase directly on reviews!"
-    );
+  document.getElementById('btn-menu-about').addEventListener('click', (e) => {
+    e.preventDefault();
+    window.location.hash = 'about';
   });
   
   // Close admin handler
   document.getElementById('btn-admin-close').addEventListener('click', () => {
+    window.location.hash = '';
+  });
+
+  // Close about Notepad handler
+  document.getElementById('btn-about-close').addEventListener('click', () => {
     window.location.hash = '';
   });
 }

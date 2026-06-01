@@ -53,7 +53,7 @@
       <div class="menu-item" id="menu-help">
         Help
         <div class="dropdown-menu">
-          <span class="dropdown-item" id="btn-menu-about">About Cureus...</span>
+          <a href="#about" class="dropdown-item" id="btn-menu-about">About Cureus...</a>
         </div>
       </div>
       <div style="margin-left: auto; display: flex; align-items: center; padding-right: 10px;">
@@ -66,10 +66,14 @@
       
       <!-- MS Paint Tool Box on the Left -->
       <aside id="toolbox">
+        <!-- Simple Selection Cursor Tool -->
+        <button class="tool-btn active" id="tool-cursor" title="Pointer (Unselect Tools)" aria-label="Select Pointer">↗️</button>
         <!-- Freehand Pencil Tool -->
-        <button class="tool-btn active" id="tool-pencil" title="Pencil (Draw Doodles)" aria-label="Select Pencil">✏️</button>
+        <button class="tool-btn" id="tool-pencil" title="Pencil (Draw Doodles)" aria-label="Select Pencil">✏️</button>
         <!-- Spray Can Tool -->
         <button class="tool-btn" id="tool-spray" title="Airbrush (Spray Paint)" aria-label="Select Airbrush">💨</button>
+        <!-- Rectangle Tool -->
+        <button class="tool-btn" id="tool-rect" title="Rectangle (Draw Box)" aria-label="Select Rectangle">⬜</button>
         <!-- Eraser Tool -->
         <button class="tool-btn" id="tool-eraser" title="Eraser (Erase Doodles)" aria-label="Select Eraser">🧽</button>
         <!-- Clear Screen Tool -->
@@ -224,6 +228,46 @@
 
               </section>
 
+            </div>
+          </div>
+
+          <!-- 3. ABOUT VIEW (Notepad Parody) -->
+          <div id="about-view">
+            <div class="notepad-window">
+              <!-- Notepad Title Header -->
+              <div class="notepad-header">
+                <span>README.TXT - Notepad</span>
+                <button class="clumsy-close-btn" id="btn-about-close" style="width:20px; height:20px; font-size:0.8rem; line-height:1;" aria-label="Close Notepad">X</button>
+              </div>
+              
+              <!-- Notepad Menu Bar -->
+              <div class="notepad-menu-bar">
+                <span class="notepad-menu-item" style="text-decoration: underline;">F</span>ile
+                <span class="notepad-menu-item" style="text-decoration: underline;">E</span>dit
+                <span class="notepad-menu-item" style="text-decoration: underline;">S</span>earch
+                <span class="notepad-menu-item" style="text-decoration: underline;">H</span>elp
+              </div>
+              
+              <!-- Notepad Content Area -->
+              <textarea class="notepad-content" readonly id="about-notepad-text">CUREUS CURATED CINEMATIC SHELL [RELEASE 1.00]
+(C) Copyright 1996-1999 TasteMaker Systems Inc.
+All Rights Reserved.
+
+PRODUCT DESCRIPTION:
+Cureus is a high-performance, single-frame desktop environment for retrieving cinematic reviews. It bypasses contemporary algorithmic processing in favor of hard-coded human taste parameters.
+
+SYSTEM REQUIREMENTS:
+- Monochromatic or 16-bit color display
+- Pointing device (mouse)
+- 800x600 minimum screen resolution
+- Active database pipeline socket
+
+INSTRUCTIONS FOR USE:
+1. Use standard scroll bar or snap alignment to paginate feed.
+2. Select cursor tool at top left to restore normal mouse interaction.
+3. Select pencil, spray can, or rectangle to draw doodles on top of reviews.
+4. Color blocks at bottom palette toggle selective database queries.
+5. Access curation dashboard via File menu to modify the database.</textarea>
             </div>
           </div>
 

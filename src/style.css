@@ -135,7 +135,8 @@ h1, h2, h3, button, input, select, textarea {
   display: flex;
   padding: 4px 10px;
   gap: 15px;
-  z-index: 10;
+  position: relative;
+  z-index: 1000;
   font-size: 0.9rem;
 }
 
@@ -365,8 +366,8 @@ h1, h2, h3, button, input, select, textarea {
   height: 100%;
   scroll-snap-align: start;
   display: flex;
-  padding: 30px;
-  gap: 30px;
+  padding: 30px 30px 30px 90px;
+  gap: 40px;
   align-items: center;
   justify-content: center;
   position: relative;
@@ -469,13 +470,31 @@ h1, h2, h3, button, input, select, textarea {
   border-radius: 15px 12px 255px 12px/12px 255px 12px 15px;
   background: var(--paint-gray);
   overflow: hidden;
-  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.2);
-  width: 320px;
-  height: 480px; /* strict 2:3 aspect ratio */
+  box-shadow: 10px 10px 0px rgba(0, 0, 0, 0.4);
+  width: 360px;
+  height: 540px; /* strict 2:3 aspect ratio */
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.poster-wrapper::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  /* CRT Scanlines Overlay */
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.poster-wrapper:hover {
+  transform: scale(1.03) rotate(1deg);
+  box-shadow: 15px 15px 0px rgba(0, 0, 0, 0.5);
 }
 
 .poster-image {
@@ -774,4 +793,80 @@ h1, h2, h3, button, input, select, textarea {
 
 .cursor-spray {
   cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><circle cx='8' cy='8' r='1' fill='%23000'/><circle cx='5' cy='5' r='1' fill='%23000'/><circle cx='11' cy='11' r='1' fill='%23000'/><circle cx='5' cy='11' r='1' fill='%23000'/><circle cx='11' cy='5' r='1' fill='%23000'/></svg>") 8 8, auto;
+}
+
+.cursor-rect {
+  cursor: crosshair;
+}
+
+/* --- Notepad Parody Window (README.TXT) --- */
+#about-view {
+  display: none;
+  width: 100%;
+  height: 100%;
+  padding: 30px;
+  overflow-y: auto;
+  z-index: 5;
+}
+
+.notepad-window {
+  background: #ffffff;
+  border: 3px solid var(--paint-dark);
+  border-radius: 4px;
+  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 780px;
+  margin: 30px auto;
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: 480px;
+  font-family: var(--font-retro);
+}
+
+.notepad-header {
+  background: var(--paint-gray);
+  border-bottom: 2px solid var(--paint-dark);
+  padding: 6px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-retro);
+  font-size: 0.95rem;
+  font-weight: bold;
+}
+
+.notepad-menu-bar {
+  background: var(--paint-bg);
+  border-bottom: 2px solid var(--paint-dark);
+  display: flex;
+  padding: 4px 12px;
+  gap: 15px;
+  font-size: 0.85rem;
+  font-family: var(--font-retro);
+}
+
+.notepad-menu-item {
+  cursor: pointer;
+}
+
+.notepad-menu-item:hover {
+  background: #316ac5;
+  color: white;
+}
+
+.notepad-content {
+  flex: 1;
+  padding: 20px;
+  background: #ffffff;
+  color: #000000;
+  font-family: var(--font-retro);
+  font-size: 1rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  outline: none;
+  overflow-y: auto;
+  user-select: text;
+  border: none;
+  resize: none;
 }
