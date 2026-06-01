@@ -1,44 +1,21 @@
-# P: Cureus | SCOPE: Single-page desktop-only streaming review site with 90s Windows XP Paint aesthetic | STATE: DONE — Favicon added, build verified, and codebase merged to master.
-LAST: Added wobbly Paint Palette SVG favicon and successfully merged v3 features to master branch | NEXT: Complete and verify git origin remote push
-TASKS: +done -blocked >next .todo
-> T1 Setup and Infrastructure
-  + T1.1 Create project structure and configuration templates
-  + T1.2 Initialize package.json and install dependencies (Vite, Supabase JS)
-  + T1.3 Configure .env with Supabase and TMDB credentials
-> T2 Core UI and Styles
-  + T2.1 Build index.html structure
-  + T2.2 Write 90s MS Paint CSS (pixel fonts, jagged boxes, retro palette)
-> T3 Supabase Integration and Seed Data
-  + T3.1 Set up Supabase Client
-  + T3.2 Seed database with initial curated reviews
-> T4 Feed & Interactive Shell
-  + T4.1 Implement 100vh CSS snap scroll layout
-  + T4.2 Add browser seen-tracking and randomized shuffle logic
-  + T4.3 Create dynamic genre tag pills and filter mechanism
-  + T4.4 Build Watch Now MS Paint window parody modal with VidKing player iframe
-> T5 Admin Panel (/#admin)
-  + T5.1 Build basic admin UI & Supabase Auth login
-  + T5.2 Integrate TMDB search and auto-complete review forms
+# P: Cureus | SCOPE: Retro Paint-style Curated Review Site | STATE: ACTIVE — v3 is Pro, master is Backup
+LAST: Refined TMDB curation search autocomplete, implemented custom NSFW/adult screening filter, cleaned 14 database entries, and resolved Netlify secrets scanning build errors.
+NEXT: Add administrative customization features and monitor automated subagent content flows.
 
-DEPENDENCIES: 
-  @supabase/supabase-js@2 — Backend database and authentication [READY]
-  vite@latest — Build tool and dev server [READY]
+## Core Accomplishments (v3 Pro)
+* **Favicon Integration**: Added inline wobbly SVG Paint Palette favicon to `index.html`.
+* **Dashboard Autocomplete**: Enhanced `src/admin.js` to dynamically pre-fetch database records and use type-safe checks to render custom dashed-border `[CURATED]` badges for searched movies.
+* **Curation Form Edit-Mode**: Auto-fills the curation form with existing reviews and ratings on click, transitioning the editor panel via a gold transition flash.
+* **NSFW Filter Integration**: Equipped our custom agent discovery skill with a strict dual-tiered filter to screen out explicit tags, suggestive taglines, and softcore production studios (e.g. *Vivamax*).
+* **Supabase Database Scan**: Executed a thorough sweep to clean 14 NSFW movie reviews, while successfully restoring and correcting key masterpieces (*Se7en*, *The Truman Show*, *Zodiac*, and *The Wolf of Wall Street*).
+* **Netlify Secrets Compliance**: Redacted plaintext Supabase and TMDB access credentials in `AUDIT-REPORT.md` to ensure zero secret leakage and successful CI/CD building.
+* **Stationary Scroll Fix**: Implemented synchronous `window` captures to bypass Chromium mouse-wheel lockouts on drawing canvases.
 
-FILES:
-  index.html — Application entrypoint [EXISTS]
-  src/style.css — Core style sheet containing XP Paint design tokens [EXISTS]
-  src/main.js — Frontend client code and feed controller [EXISTS]
-  src/supabase.js — Supabase client configuration [EXISTS]
-  src/db.js — Deep Database Storage Seam [EXISTS]
-  src/admin.js — Curation panel and TMDB search logic [EXISTS]
-
-## Decisions (grill 2026-06-01)
-
-### Architectural Restructure & Seams
-
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Storage Seam | Deep Database Module (`src/db.js`) | Hides raw database client queries to maximize leverage and keep views clean. |
-| Deduplication Placement | Inside `src/db.js` `fetchReviews` | The database fetch pre-deduplicates reviews by `tmdb_id` before returning, keeping views thin. |
-| Error Handling | Standard JS `Error` exceptions | Callers use `try/catch` wrappers which is robust and standard. |
-| Client Isolation | Full Encapsulation (no backdoor) | Exposes only abstract CRUD operations (`fetchReviews`, `saveReview`, `deleteReview`) to guarantee easy mock testing. |
+## Project Structure
+* **index.html** — Windows XP Paint client entrypoint
+* **src/style.css** — Monospace retro styling, jagged borders, palette bar
+* **src/main.js** — Feed client controller and snap-scrolling orchestrator
+* **src/admin.js** — Curator search & review editor control center
+* **src/db.js** — Abstract database storage seam (Supabase operations)
+* **src/supabase.js** — Supabase client configuration
+* **src/utils.js** — ESCAPE-HTML sanitization utils mitigating Stored XSS
