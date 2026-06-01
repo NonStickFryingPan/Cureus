@@ -199,6 +199,20 @@ function setupCanvasBoard() {
   canvas.addEventListener('mousemove', draw);
   canvas.addEventListener('mouseup', stopDraw);
   canvas.addEventListener('mouseleave', stopDraw);
+
+  // Forward wheel scrolling events from canvas to scrollable feed viewport
+  canvas.addEventListener('wheel', (e) => {
+    if (canvas.style.pointerEvents !== 'none') {
+      const viewport = document.getElementById('feed-view');
+      if (viewport) {
+        viewport.scrollBy({
+          top: e.deltaY,
+          behavior: 'auto'
+        });
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
 }
 
 // --- Sidebar Toolbar Actions ---
