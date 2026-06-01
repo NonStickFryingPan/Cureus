@@ -39,6 +39,7 @@
         <div class="dropdown-menu">
           <a href="#" class="dropdown-item" id="btn-menu-feed">Home Feed</a>
           <a href="#admin" class="dropdown-item" id="btn-menu-admin">Admin Dashboard</a>
+          <a href="#" class="dropdown-item" id="btn-menu-apply">Apply to be a Reviewer...</a>
           <div class="dropdown-divider"></div>
           <a href="#" class="dropdown-item" id="btn-menu-logout" style="display: none;">Logout Editor</a>
         </div>
@@ -343,6 +344,88 @@ INSTRUCTIONS FOR USE:
             🔑 Authenticate
           </button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. REVIEWER APPLICATION OVERLAY (XP Dialog Box Parody) -->
+  <div id="reviewer-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.4); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="paint-window" style="width: 400px; height: auto; border: 3px solid var(--paint-dark); border-radius: 4px; box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.5);">
+      <!-- Window Header -->
+      <div class="clumsy-title-bar">
+        <span>Apply: Tastemaker Privileges</span>
+        <button class="clumsy-close-btn" id="btn-apply-close" aria-label="Close Application">X</button>
+      </div>
+      
+      <!-- Dialog Body -->
+      <div class="clumsy-box" style="margin: 15px; background: var(--paint-bg); border-radius: 4px;">
+        
+        <!-- Form Pane -->
+        <form id="apply-form" onsubmit="return false;">
+          <p style="font-size: 0.9rem; margin-bottom: 15px; font-family: var(--font-clumsy);">
+            Tastemaker status is strictly regulated. Apply below to request database edit coordinates.
+          </p>
+          
+          <div class="form-group" style="margin-bottom: 10px; display: flex; flex-direction: column;">
+            <label for="apply-name" style="font-family: var(--font-pixel); font-size: 1.3rem;">Your Name</label>
+            <input class="clumsy-input" type="text" id="apply-name" placeholder="e.g. Roger Ebert" required>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 10px; display: flex; flex-direction: column;">
+            <label for="apply-email" style="font-family: var(--font-pixel); font-size: 1.3rem;">Email Address</label>
+            <input class="clumsy-input" type="email" id="apply-email" placeholder="e.g. roger@ebert.com" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 10px; display: flex; flex-direction: column;">
+            <label for="apply-critic-type" style="font-family: var(--font-pixel); font-size: 1.3rem;">Critic Profile</label>
+            <select class="clumsy-select" id="apply-critic-type" required>
+              <option value="snob">Elitist Art-House Purist</option>
+              <option value="popcorn">Popcorn Explosion Junkie</option>
+              <option value="pretentious">Obscure French New Wave Fan</option>
+              <option value="standard">Average Movie Enjoyer</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 15px; display: flex; flex-direction: column;">
+            <label for="apply-pitch" style="font-family: var(--font-pixel); font-size: 1.3rem;">Prove You Have Taste</label>
+            <textarea class="clumsy-textarea" id="apply-pitch" rows="4" placeholder="Pitch us your cinema views..." required></textarea>
+          </div>
+
+          <button type="submit" class="clumsy-btn" id="btn-apply-submit" style="width: 100%; justify-content: center; background: #c0c0c0;">
+            ✉ Submit Application
+          </button>
+        </form>
+
+        <!-- Processing/Animation Pane (hidden by default) -->
+        <div id="apply-processing" style="display: none; text-align: center; padding: 20px 0;">
+          <p style="font-family: var(--font-pixel); font-size: 1.5rem; margin-bottom: 15px;">TRANSMITTING APPLICANT TASTE DATA...</p>
+          
+          <!-- Classic Windows XP File Copy Animation -->
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 200px; margin: 20px auto; position: relative;">
+            <span style="font-size: 2rem;">📁</span>
+            <div class="xp-file-animation" style="font-size: 1.5rem; position: absolute; left: 40px; top: 2px;">📄</div>
+            <span style="font-size: 2rem;">💻</span>
+          </div>
+          
+          <!-- Fake progress bar -->
+          <div style="border: 2px solid #000; height: 20px; background: #fff; position: relative; margin-top: 15px;">
+            <div id="apply-progress-bar" style="width: 0%; height: 100%; background: #000080; transition: width 3s linear;"></div>
+          </div>
+          <p style="font-size: 0.8rem; color: #555; margin-top: 5px; font-family: var(--font-retro);" id="apply-status-text">Connecting to dial-up server...</p>
+        </div>
+
+        <!-- Success Pane (hidden by default) -->
+        <div id="apply-success" style="display: none; text-align: center; padding: 15px 0;">
+          <p style="font-size: 2.5rem; margin-bottom: 10px;">🎉</p>
+          <h3 style="font-family: var(--font-pixel); font-size: 1.8rem; margin-bottom: 10px; color: #008000;">APPLICATION COMMITTED!</h3>
+          <p style="font-family: var(--font-clumsy); font-size: 1rem; line-height: 1.4; margin-bottom: 20px; text-align: left;">
+            Taste alignment: 99.1% (Tastemaker Status Approved in theory). Our dial-up modem is transmitting your credentials to the main server. Expect a response in 14-20 business weeks. <strong>Please do not pick up the phone line while transmitting.</strong>
+          </p>
+          <button class="clumsy-btn" id="btn-apply-ok" style="width: 100px; justify-content: center; background: #c0c0c0; font-size: 1.3rem;">
+            OK
+          </button>
+        </div>
+
       </div>
     </div>
   </div>

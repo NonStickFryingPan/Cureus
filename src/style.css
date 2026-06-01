@@ -870,3 +870,15 @@ h1, h2, h3, button, input, select, textarea {
   border: none;
   resize: none;
 }
+
+/* --- Windows XP Dialog Copy Animation --- */
+@keyframes xp-copy-paper {
+  0% { transform: translate(0px, 0px) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translate(110px, 0px) rotate(360deg); opacity: 0; }
+}
+
+.xp-file-animation {
+  animation: xp-copy-paper 1.2s infinite linear;
+}

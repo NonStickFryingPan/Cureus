@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupMenuActions();
   setupHashRouter();
   setupPlayerModal();
+  setupReviewerModal();
   
   // Track cursor coordinates standard in MS Paint
   const workspace = document.getElementById('workspace');
@@ -300,6 +301,12 @@ function setupMenuActions() {
   // Close about Notepad handler
   document.getElementById('btn-about-close').addEventListener('click', () => {
     window.location.hash = '';
+  });
+
+  // Apply to be a Reviewer handler
+  document.getElementById('btn-menu-apply').addEventListener('click', (e) => {
+    e.preventDefault();
+    openReviewerModal();
   });
 }
 
@@ -621,6 +628,75 @@ function openPlayer(review) {
     </iframe>
   `;
   
+  overlay.style.display = 'flex';
+}
+
+// --- Reviewer Application Dialog Box Parody ---
+function setupReviewerModal() {
+  const overlay = document.getElementById('reviewer-overlay');
+  const closeBtn = document.getElementById('btn-apply-close');
+  const form = document.getElementById('apply-form');
+  const processing = document.getElementById('apply-processing');
+  const success = document.getElementById('apply-success');
+  const okBtn = document.getElementById('btn-apply-ok');
+  const progressBar = document.getElementById('apply-progress-bar');
+  const statusText = document.getElementById('apply-status-text');
+
+  const close = () => {
+    overlay.style.display = 'none';
+    // Reset dialogue states
+    form.style.display = 'block';
+    processing.style.display = 'none';
+    success.style.display = 'none';
+    progressBar.style.width = '0%';
+    form.reset();
+  };
+
+  closeBtn.addEventListener('click', close);
+  okBtn.addEventListener('click', close);
+
+  // ESC key to close modal
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.style.display === 'flex') close();
+  });
+
+  // Handle form submit with parodied progress bar loading
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    // Transition display to transmission pane
+    form.style.display = 'none';
+    processing.style.display = 'block';
+    progressBar.style.width = '0%';
+    
+    // Animate progress text over ticks
+    statusText.textContent = 'Connecting to dial-up server...';
+    
+    setTimeout(() => {
+      statusText.textContent = 'Handshaking (Beep-boop-kzzzzt-shhhhhh)...';
+      progressBar.style.width = '35%';
+    }, 700);
+
+    setTimeout(() => {
+      statusText.textContent = 'Uploading taste coefficients to mainframe...';
+      progressBar.style.width = '70%';
+    }, 1600);
+
+    setTimeout(() => {
+      statusText.textContent = 'Validating aesthetic standards...';
+      progressBar.style.width = '95%';
+    }, 2500);
+
+    setTimeout(() => {
+      progressBar.style.width = '100%';
+      processing.style.display = 'none';
+      success.style.display = 'block';
+    }, 3200);
+  });
+}
+
+function openReviewerModal() {
+  const overlay = document.getElementById('reviewer-overlay');
   overlay.style.display = 'flex';
 }
 
