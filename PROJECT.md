@@ -29,4 +29,16 @@ FILES:
   src/style.css — Core style sheet containing XP Paint design tokens [EXISTS]
   src/main.js — Frontend client code and feed controller [EXISTS]
   src/supabase.js — Supabase client configuration [EXISTS]
+  src/db.js — Deep Database Storage Seam [EXISTS]
   src/admin.js — Curation panel and TMDB search logic [EXISTS]
+
+## Decisions (grill 2026-06-01)
+
+### Architectural Restructure & Seams
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Storage Seam | Deep Database Module (`src/db.js`) | Hides raw database client queries to maximize leverage and keep views clean. |
+| Deduplication Placement | Inside `src/db.js` `fetchReviews` | The database fetch pre-deduplicates reviews by `tmdb_id` before returning, keeping views thin. |
+| Error Handling | Standard JS `Error` exceptions | Callers use `try/catch` wrappers which is robust and standard. |
+| Client Isolation | Full Encapsulation (no backdoor) | Exposes only abstract CRUD operations (`fetchReviews`, `saveReview`, `deleteReview`) to guarantee easy mock testing. |
