@@ -2,6 +2,8 @@ import { supabase } from './supabase.js';
 import { fetchReviews, saveReview, deleteReview } from './db.js';
 import { escapeHtml } from './utils.js';
 
+let isSubmitting = false;
+
 // TMDB Genre ID lookup map
 const TMDB_GENRES = {
   28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
@@ -124,6 +126,7 @@ function clearForm() {
   document.getElementById('form-poster').value = '';
   document.getElementById('form-genres').value = '';
   document.getElementById('form-rating').value = '5';
+  document.getElementById('form-reviewer').value = 'The TasteMaker';
   document.getElementById('form-review').value = '';
 }
 
@@ -133,7 +136,9 @@ document.getElementById('btn-form-clear').addEventListener('click', clearForm);
 function setupFormSubmit() {
   document.getElementById('review-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!session) return alert('You must be authenticated to curation reviews!');
+    isSubmitting = true;
 
     const id = document.getElementById('form-review-id').value;
     const type = document.getElementById('form-type').value;
@@ -171,7 +176,7 @@ function setupFormSubmit() {
 
     try {
       // Save review using deep DB module (handles insert or update internally)
-      await saveReview({ id, ...record });
+      await saveReview({ ...record, id });
       alert(id ? 'Review updated successfully!' : 'Review created successfully!');
 
       clearForm();
@@ -188,6 +193,7 @@ function setupFormSubmit() {
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = '💾 Save Review';
+      isSubmitting = false;
     }
   });
 }
@@ -349,7 +355,7 @@ function setupSearchActions() {
         card.id = cardId;
         
         card.innerHTML = `
-          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(posterPath)}" alt="Poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2292%22 height=%22138%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23ccc%22/></svg>'">
+          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(posterPath)}" alt="Poster">
           <div class="search-card-info">
             <div class="search-card-title">${escapeHtml(title)}</div>
             <div class="search-card-meta">MOVIE | Release: ${escapeHtml(year)}</div>
@@ -387,7 +393,7 @@ function setupSearchActions() {
       console.error('TMDB Fetch Error:', err);
       indicator.style.display = 'none';
       resultsContainer.style.display = 'flex';
-      resultsContainer.innerHTML = `<div style="font-size: 0.9rem; padding: 10px; color: #f00;">Search failed: ${err.message}</div>`;
+      resultsContainer.innerHTML = `<div style="font-size: 0.9rem; padding: 10px; color: #f00;">Search failed: ${escapeHtml(err.message)}</div>`;
     }
   };
   

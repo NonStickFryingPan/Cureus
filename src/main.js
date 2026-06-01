@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupHashRouter();
   setupPlayerModal();
   setupReviewerModal();
+  setupGlobalEscapeHandler();
   
   // Track cursor coordinates standard in MS Paint
   const workspace = document.getElementById('workspace');
@@ -601,6 +602,21 @@ function renderGenrePalette(genres) {
   });
 }
 
+// --- Global Escape Handler (shared by all modals, registered once) ---
+function setupGlobalEscapeHandler() {
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const playerOverlay = document.getElementById('player-overlay');
+    const reviewerOverlay = document.getElementById('reviewer-overlay');
+    if (playerOverlay.style.display === 'flex') {
+      playerOverlay.style.display = 'none';
+      document.getElementById('player-iframe-root').innerHTML = '';
+    } else if (reviewerOverlay.style.display === 'flex') {
+      reviewerOverlay.style.display = 'none';
+    }
+  });
+}
+
 // --- Watch Now Player Modal ---
 function setupPlayerModal() {
   const overlay = document.getElementById('player-overlay');
@@ -618,10 +634,6 @@ function setupPlayerModal() {
     if (e.target === overlay) close();
   });
   
-  // ESC key to close modal
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') close();
-  });
 }
 
 function openPlayer(review) {
@@ -672,11 +684,6 @@ function setupReviewerModal() {
 
   closeBtn.addEventListener('click', close);
   okBtn.addEventListener('click', close);
-
-  // ESC key to close modal
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && overlay.style.display === 'flex') close();
-  });
 
   // Handle form submit with parodied progress bar loading
   form.addEventListener('submit', (e) => {

@@ -10,7 +10,11 @@ const env = Object.fromEntries(
   readFileSync(resolve(__dirname, '.env'), 'utf-8')
     .split('\n')
     .filter(l => l && !l.startsWith('#'))
-    .map(l => l.split('=').map(s => s.trim()))
+    .map(l => {
+      const idx = l.indexOf('=');
+      return idx === -1 ? null : [l.slice(0, idx).trim(), l.slice(idx + 1).trim()];
+    })
+    .filter(Boolean)
 );
 
 const supabaseUrl = env.VITE_SUPABASE_URL;
@@ -425,21 +429,26 @@ async function run() {
   // Target: 30 reviews (10 from each reviewer)
   const targetPerPersona = 10;
   const selected = [];
+  const selectedIds = new Set();
 
-  // Pick up to 10 from each pool
-  selected.push(...rickPool.slice(0, targetPerPersona));
-  selected.push(...sallyPool.slice(0, targetPerPersona));
-  selected.push(...pennyPool.slice(0, targetPerPersona));
+  // Helper to add unique movies (deduplicate across pools)
+  const addIfUnique = (movie) => {
+    if (!selectedIds.has(movie.tmdb_id)) {
+      selected.push(movie);
+      selectedIds.add(movie.tmdb_id);
+    }
+  };
+
+  // Pick up to 10 from each pool (deduplicated across pools)
+  rickPool.slice(0, targetPerPersona).forEach(addIfUnique);
+  sallyPool.slice(0, targetPerPersona).forEach(addIfUnique);
+  pennyPool.slice(0, targetPerPersona).forEach(addIfUnique);
 
   // If we don't have exactly 30 due to unbalance, fill it up from any remaining unreviewed movies
-  const selectedIds = new Set(selected.map(m => m.tmdb_id));
   if (selected.length < 30 && selected.length < unreviewed.length) {
     for (const m of unreviewed) {
-      if (!selectedIds.has(m.tmdb_id)) {
-        selected.push(m);
-        selectedIds.add(m.tmdb_id);
-        if (selected.length === 30) break;
-      }
+      addIfUnique(m);
+      if (selected.length === 30) break;
     }
   }
 
@@ -520,6 +529,9 @@ async function run() {
       console.error(`  ✗ Error processing TMDB ID ${item.tmdb_id}:`, err.message);
       fail++;
     }
+
+    // Rate-limit delay between TMDB requests
+    await new Promise(r => setTimeout(r, 250));
   }
 
   console.log(`\n=== Automated Task Finished ===`);

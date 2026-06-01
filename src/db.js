@@ -5,10 +5,9 @@ import { supabase } from './supabase.js';
  * Orders reviews by created_at descending (most recent first) so that
  * deduplication keeps the newest review for any given movie.
  * 
- * @param {string|null} genre - Optional genre to filter by.
  * @returns {Promise<Array>} A list of clean, unique movie review records.
  */
-export async function fetchReviews(genre = null) {
+export async function fetchReviews() {
   const { data, error } = await supabase
     .from('reviews')
     .select('*')
@@ -19,17 +18,11 @@ export async function fetchReviews(genre = null) {
   }
 
   const allReviews = data || [];
-  
-  // Filter by genre if provided
-  let filtered = allReviews;
-  if (genre) {
-    filtered = allReviews.filter(r => r.genres && r.genres.includes(genre));
-  }
 
   // Deduplicate by tmdb_id (keeping the most recent)
   const seenTmdbIds = new Set();
   const deduped = [];
-  filtered.forEach(r => {
+  allReviews.forEach(r => {
     if (!seenTmdbIds.has(r.tmdb_id)) {
       seenTmdbIds.add(r.tmdb_id);
       deduped.push(r);
@@ -90,13 +83,17 @@ export async function deleteReview(id) {
     throw new Error('Review ID is required for deletion.');
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('reviews')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .select();
 
   if (error) {
     throw new Error(`Failed to delete review: ${error.message}`);
+  }
+  if (!data || data.length === 0) {
+    throw new Error(`Review with ID ${id} not found or already deleted.`);
   }
 
   return true;
