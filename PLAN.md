@@ -142,15 +142,34 @@ Row-level security: public can SELECT, only authenticated user can INSERT/UPDATE
 
 ---
 
-## TODOs (Frontend Phase)
+## TODOs
 
-### Redesign admin frontend
-Redo the admin dashboard UI when building the frontend:
+### 1. Set up Cloudflare Pages
+- Connect the GitHub repo to Cloudflare Pages for auto-deployment
+- Configure env vars in Cloudflare dashboard: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_TMDB_ACCESS_TOKEN`
+- Every push to `main` auto-deploys
+
+### 2. Add daily Supabase ping
+- Set up a free cron job (cron-job.org) to ping the Supabase API once a day
+- Prevents the free tier from pausing after 1 week of inactivity
+
+### 3. Redesign admin frontend (when building the frontend)
+Redo the admin dashboard UI when you get to the frontend phase:
 - `src/admin/index.html` — dashboard shell, login screen, reviews table
 - `src/admin/auth.js` — Supabase auth gate (login/logout)
 - `src/admin/editor.js` — review form, TMDB autofill, save to Supabase
 
-Keep `src/admin/tmdb.js` (TMDB API helpers) and `src/supabase.js` (Supabase client) — those are the backend-layer modules, no redesign needed.
+Keep `src/admin/tmdb.js` (TMDB API helpers) and `src/supabase.js` (Supabase client) — those are backend-layer modules, no redesign needed.
+
+### 4. Build the public feed site
+When ready:
+- `index.html` — entry point
+- `style.css` — site styling
+- `src/main.js` — boot, fetch from Supabase, shuffle, render
+- `src/feed.js` — renders cards, snap scroll setup
+- `src/card.js` — single card HTML template
+- `src/player.js` — fullscreen overlay + iframe logic
+- `src/filter.js` — genre filter bar, re-render on select
 
 ---
 
