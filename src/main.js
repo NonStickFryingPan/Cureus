@@ -3,12 +3,12 @@ import { escapeHtml } from './utils.js';
 
 // --- Application State (Functional Pattern) ---
 let allReviews = [];
-let filteredReviews = [];
 let currentGenre = null;
 let activeTool = 'cursor'; // default pointer
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
+let seenObserver = null;
 
 // Classic MS Paint palette colors
 const paintColors = [
@@ -80,6 +80,9 @@ function setupHashRouter() {
       // Lazily load admin script if needed
       import('./admin.js').then((m) => {
         if (m.initAdmin) m.initAdmin();
+      }).catch((err) => {
+        console.error('Failed to load admin module:', err);
+        document.querySelector('#admin-view').innerHTML += '<div style="color:red;padding:20px;">Failed to load admin panel.</div>';
       });
     } else if (hash === '#about') {
       feedView.style.display = 'none';
@@ -100,8 +103,8 @@ function setupHashRouter() {
   };
   
   window.addEventListener('hashchange', handleRoute);
-  // Initial check
-  setTimeout(handleRoute, 100);
+  // Initial check (call synchronously before loadReviews)
+  handleRoute();
 }
 
 // --- HTML5 Canvas Scribble Board ---
@@ -130,7 +133,7 @@ function setupCanvasBoard() {
   
   window.resizeCanvas = resize;
   window.addEventListener('resize', resize);
-  setTimeout(resize, 200);
+  requestAnimationFrame(resize);
 
   let startX = 0;
   let startY = 0;
@@ -343,15 +346,23 @@ async function loadReviews() {
 
 // --- Seen Tracking ---
 function getSeenIds() {
-  const seenStr = sessionStorage.getItem('cureus_seen_ids');
-  return seenStr ? JSON.parse(seenStr) : [];
+  try {
+    const seenStr = sessionStorage.getItem('cureus_seen_ids');
+    return seenStr ? JSON.parse(seenStr) : [];
+  } catch {
+    return [];
+  }
 }
 
 function markAsSeen(id) {
-  const seen = getSeenIds();
-  if (!seen.includes(id)) {
-    seen.push(id);
-    sessionStorage.setItem('cureus_seen_ids', JSON.stringify(seen));
+  try {
+    const seen = getSeenIds();
+    if (!seen.includes(id)) {
+      seen.push(id);
+      sessionStorage.setItem('cureus_seen_ids', JSON.stringify(seen));
+    }
+  } catch {
+    // Silent — seen tracking is non-critical
   }
 }
 
@@ -401,7 +412,7 @@ function renderFeed(queue, allSeen) {
         <div style="text-align: center;">
           <h2 class="review-title" style="font-size: 3rem;">No reviews found</h2>
           <p style="font-family: var(--font-clumsy); font-size: 1.5rem; margin-top: 20px;">
-            Nothing curated for genre: <strong>${currentGenre}</strong> yet!
+            Nothing curated for genre: <strong>${escapeHtml(currentGenre || 'All')}</strong> yet!
           </p>
         </div>
       </div>
@@ -449,7 +460,7 @@ function renderFeed(queue, allSeen) {
       
       <div class="review-right">
         <div class="poster-wrapper">
-          <img class="poster-image" src="https://image.tmdb.org/t/p/w500${r.poster}" alt="${escapeHtml(r.title)} Poster" loading="lazy">
+          <img class="poster-image" src="${r.poster ? 'https://image.tmdb.org/t/p/w500' + r.poster : ''}" alt="${escapeHtml(r.title)} Poster" loading="lazy">
         </div>
       </div>
     `;
@@ -476,7 +487,7 @@ function renderFeed(queue, allSeen) {
     feedView.appendChild(endCard);
     
     document.getElementById('btn-reset-seen').addEventListener('click', () => {
-      sessionStorage.removeItem('cureus_seen_ids');
+      try { sessionStorage.removeItem('cureus_seen_ids'); } catch {}
       shuffleAndRender();
     });
   }
@@ -514,9 +525,12 @@ function setupFeedListeners() {
 
 // --- Seen Intersection Observer ---
 function setupSeenObserver() {
+  // Disconnect previous observer to prevent memory leak
+  if (seenObserver) seenObserver.disconnect();
+  
   const cards = document.querySelectorAll('.review-card[data-id]');
   
-  const observer = new IntersectionObserver((entries) => {
+  seenObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const id = entry.target.dataset.id;
@@ -528,7 +542,7 @@ function setupSeenObserver() {
     threshold: 0.6 // Trigger when card is 60% in view
   });
   
-  cards.forEach(card => observer.observe(card));
+  cards.forEach(card => seenObserver.observe(card));
 }
 
 // --- Dynamic Genre Palette Renderer ---
@@ -550,7 +564,8 @@ function renderGenrePalette(genres) {
     allBox.classList.add('active');
     
     // Update active color blocks
-    document.querySelector('.selected-color-indicator').style.backgroundColor = '#808080';
+    const indicatorAll = document.querySelector('.selected-color-indicator');
+    if (indicatorAll) indicatorAll.style.backgroundColor = '#808080';
     document.getElementById('status-selected-genre').textContent = 'Filter: NONE';
     
     shuffleAndRender();
@@ -566,7 +581,7 @@ function renderGenrePalette(genres) {
     box.className = `color-box ${currentGenre === genre ? 'active' : ''}`;
     box.style.backgroundColor = color;
     box.title = `Filter by: ${genre}`;
-    box.innerHTML = `<span class="color-label">${genre}</span>`;
+    box.innerHTML = `<span class="color-label">${escapeHtml(genre)}</span>`;
     box.id = `color-box-${genre.toLowerCase().replace(/\s+/g, '-')}`;
     
     box.addEventListener('click', () => {
@@ -575,7 +590,8 @@ function renderGenrePalette(genres) {
       box.classList.add('active');
       
       // Update selected color indicator block
-      document.querySelector('.selected-color-indicator').style.backgroundColor = color;
+      const indicatorColor = document.querySelector('.selected-color-indicator');
+      if (indicatorColor) indicatorColor.style.backgroundColor = color;
       document.getElementById('status-selected-genre').textContent = `Filter: ${genre.toUpperCase()}`;
       
       shuffleAndRender();
@@ -623,9 +639,10 @@ function openPlayer(review) {
     <iframe 
       id="vidking-stream-frame"
       src="${embedUrl}" 
+      sandbox="allow-scripts allow-same-origin allow-popups"
       allow="autoplay; fullscreen" 
       allowfullscreen
-      title="${review.title} playback stream">
+      title="${escapeHtml(review.title)} playback stream">
     </iframe>
   `;
   
