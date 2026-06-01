@@ -206,18 +206,13 @@ function setupCanvasBoard() {
   canvas.addEventListener('mouseup', stopDraw);
   canvas.addEventListener('mouseleave', stopDraw);
 
-  // Forward wheel events to feed viewport regardless of active tool
-  // In cursor mode, pointer-events:none on the canvas passes events through, but
-  // a {passive:false} wheel listener on window can cause browsers to suppress
-  // default scroll when the mouse is stationary. Always forwarding manually
-  // gives consistent scroll behavior and bypasses this suppression.
-  window.addEventListener('wheel', (e) => {
+  // In drawing mode (pointer-events: auto), the canvas captures wheel events;
+  // forward them to the feed viewport so scroll still works.
+  // In cursor mode (pointer-events: none), wheel events pass through the
+  // canvas naturally to the feed-viewport below — no listener interference.
+  canvas.addEventListener('wheel', (e) => {
     const viewport = document.getElementById('feed-view');
-    if (!viewport) return;
-
-    // Only intercept wheel events that originate within the workspace area
-    // (canvas overlay or the feed viewport itself)
-    if (e.target === canvas || canvas.contains(e.target) || viewport.contains(e.target)) {
+    if (viewport) {
       viewport.scrollTop += e.deltaY;
       e.preventDefault();
     }
