@@ -6,15 +6,13 @@
  */
 
 import { posterUrl, searchMulti, fetchGenres, resolveGenres } from './tmdb.js';
-import { createReview, updateReview, deleteReview, fetchReviews } from '../supabase.js';
+import { createReview, updateReview, fetchReviews } from '../supabase.js';
 
 let currentResult = null;     // Currently selected TMDB result
 let editingId = null;         // UUID if editing an existing review
 let genreList = [];           // Cached TMDB genre list
 
 // DOM refs (set on init)
-const $ = (sel) => document.querySelector(sel);
-
 const form = {
   searchInput: null,
   searchResults: null,
@@ -30,6 +28,7 @@ const form = {
   rating: null,
   saveBtn: null,
   cancelBtn: null,
+  formTitle: null,
 };
 
 /**
@@ -53,6 +52,13 @@ export async function initEditor(refs) {
   if (form.cancelBtn) {
     form.cancelBtn.addEventListener('click', onCancel);
   }
+
+  // Close search results on outside click
+  document.addEventListener('click', (e) => {
+    if (!form.searchInput.contains(e.target) && !form.searchResults.contains(e.target)) {
+      form.searchResults.classList.add('hidden');
+    }
+  });
 }
 
 /**
@@ -94,7 +100,7 @@ async function onSearch() {
             ${img}
             <div class="search-result-info">
               <strong>${label}</strong>
-              <span>${year} · ${r.media_type === 'movie' ? 'Movie' : 'TV'}</span>
+              <span>${year} · ${r.media_type === 'movie' ? 'Movie' : 'TV Show'}</span>
             </div>
           </button>
         `;
@@ -119,49 +125,42 @@ async function onSearch() {
  * Select a TMDB result and populate the form.
  */
 async function selectResult(tmdbId, mediaType) {
-  // Find the result from the search results (we already have it in the DOM data)
-  const items = form.searchResults.querySelectorAll('.search-result-item');
-  let selectedData = null;
-
-  // We need to re-fetch since we only have minimal data in the DOM
   try {
     const results = await searchMulti(form.searchInput.value.trim());
-    selectedData = results.find((r) => r.id === tmdbId && r.media_type === mediaType);
+    const selectedData = results.find((r) => r.id === tmdbId && r.media_type === mediaType);
+    if (!selectedData) return;
+
+    currentResult = selectedData;
+
+    const label = mediaType === 'movie' ? selectedData.title : selectedData.name;
+    const year = mediaType === 'movie'
+      ? (selectedData.release_date || '').slice(0, 4)
+      : (selectedData.first_air_date || '').slice(0, 4);
+
+    form.title.value = label || '';
+    form.year.value = year || '';
+    form.tmdbId.value = tmdbId;
+    form.type.value = mediaType;
+    form.posterPath.value = selectedData.poster_path || '';
+    form.genres.value = resolveGenres(selectedData.genre_ids || [], genreList).join(', ');
+
+    // Show poster preview
+    if (selectedData.poster_path) {
+      form.posterPreview.innerHTML = `<img src="${posterUrl(selectedData.poster_path, 'w342')}" alt="Poster preview" class="poster-preview-img" />`;
+      form.posterPreview.classList.remove('hidden');
+    } else {
+      form.posterPreview.innerHTML = '<div class="poster-preview-empty">No poster available</div>';
+      form.posterPreview.classList.remove('hidden');
+    }
+
+    // Hide search results
+    form.searchResults.classList.add('hidden');
+
+    // Scroll to form
+    form.saveBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
   } catch (err) {
     console.error('Failed to get result details:', err);
-    return;
   }
-
-  if (!selectedData) return;
-
-  currentResult = selectedData;
-
-  const label = mediaType === 'movie' ? selectedData.title : selectedData.name;
-  const year = mediaType === 'movie'
-    ? (selectedData.release_date || '').slice(0, 4)
-    : (selectedData.first_air_date || '').slice(0, 4);
-
-  form.title.value = label || '';
-  form.year.value = year || '';
-  form.tmdbId.value = tmdbId;
-  form.type.value = mediaType;
-  form.posterPath.value = selectedData.poster_path || '';
-  form.genres.value = resolveGenres(selectedData.genre_ids || [], genreList).join(', ');
-
-  // Show poster preview
-  if (selectedData.poster_path) {
-    form.posterPreview.innerHTML = `<img src="${posterUrl(selectedData.poster_path, 'w342')}" alt="Poster preview" class="poster-preview-img" />`;
-    form.posterPreview.classList.remove('hidden');
-  } else {
-    form.posterPreview.innerHTML = '<div class="poster-preview-empty">No poster available</div>';
-    form.posterPreview.classList.remove('hidden');
-  }
-
-  // Hide search results
-  form.searchResults.classList.add('hidden');
-
-  // Scroll to form
-  form.saveBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 /**
@@ -181,11 +180,11 @@ async function onSave() {
   };
 
   // Validate
-  if (!reviewData.title) return alert('Title is required.');
-  if (!reviewData.review) return alert('Review text is required.');
-  if (!reviewData.reviewer) return alert('Reviewer name is required.');
+  if (!reviewData.title) return showToast('Title is required.', 'error');
+  if (!reviewData.review) return showToast('Review text is required.', 'error');
+  if (!reviewData.reviewer) return showToast('Reviewer name is required.', 'error');
   if (!reviewData.rating || reviewData.rating < 1 || reviewData.rating > 5) {
-    return alert('Rating must be between 1 and 5.');
+    return showToast('Rating must be between 1 and 5.', 'error');
   }
 
   form.saveBtn.disabled = true;
@@ -200,14 +199,14 @@ async function onSave() {
     }
 
     if (result.error) {
-      alert(`Failed to save: ${result.error.message}`);
+      showToast(`Failed to save: ${result.error.message}`, 'error');
       return;
     }
 
     resetForm();
-    alert('Review saved!');
+    showToast('Review saved successfully!', 'success');
   } catch (err) {
-    alert(`Unexpected error: ${err.message}`);
+    showToast(`Unexpected error: ${err.message}`, 'error');
   } finally {
     form.saveBtn.disabled = false;
     form.saveBtn.textContent = editingId ? 'Update Review' : 'Save Review';
@@ -243,6 +242,8 @@ export function resetForm() {
   form.rating.value = '5';
   form.saveBtn.textContent = 'Save Review';
   if (form.cancelBtn) form.cancelBtn.classList.add('hidden');
+  if (form.formTitle) form.formTitle.textContent = 'New Review';
+  updateStarDisplay(5);
 }
 
 /**
@@ -270,6 +271,49 @@ export function loadForEdit(review) {
 
   form.saveBtn.textContent = 'Update Review';
   if (form.cancelBtn) form.cancelBtn.classList.remove('hidden');
+  if (form.formTitle) form.formTitle.textContent = `Editing: ${review.title}`;
+  updateStarDisplay(review.rating);
+}
+
+/**
+ * Update the visual star rating display.
+ */
+export function updateStarDisplay(rating) {
+  const starsEl = document.getElementById('star-display');
+  if (!starsEl) return;
+  starsEl.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const star = document.createElement('button');
+    star.type = 'button';
+    star.className = 'star-btn' + (i <= rating ? ' active' : '');
+    star.textContent = '★';
+    star.dataset.value = i;
+    star.addEventListener('click', () => {
+      form.rating.value = i;
+      updateStarDisplay(i);
+    });
+    starsEl.appendChild(star);
+  }
+}
+
+/**
+ * Show a toast notification.
+ */
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) {
+    alert(message);
+    return;
+  }
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
 }
 
 // -----------------------------------------------------------

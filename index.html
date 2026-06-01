@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cureus — Pathetic 90s Paint Site</title>
+  <meta name="description" content="A clumsy, scribbly, and utterly pathetic curated movie feed in 90s Windows XP MS Paint style." />
+
+  <!-- Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://image.tmdb.org" />
+
+  <!-- Fonts (using Times New Roman, Comic Sans MS, and other system fonts natively) -->
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="paint-cursor-select">
+
+  <!-- ==========================================
+       GLOBAL MS PAINT WINDOW WRAPPER (WORKSPACE)
+       ========================================== -->
+  <div class="paint-workspace">
+
+    <!-- Retro Left Toolbar (Tools) -->
+    <aside class="paint-toolbox" aria-label="Tools">
+      <div class="toolbox-grip"></div>
+      <div class="tool-grid">
+        <button class="tool-btn active" data-tool="select" title="Select (Pointer)">⬚</button>
+        <button class="tool-btn" data-tool="eraser" title="Eraser">🧽</button>
+        <button class="tool-btn" data-tool="fill" title="Fill Color">🪣</button>
+        <button class="tool-btn" data-tool="picker" title="Pick Color">🧪</button>
+        <button class="tool-btn" data-tool="zoom" title="Zoom">🔍</button>
+        <button class="tool-btn" data-tool="pencil" title="Pencil">✏️</button>
+        <button class="tool-btn" data-tool="brush" title="Brush">🖌️</button>
+        <button class="tool-btn" data-tool="spray" title="Airbrush">💨</button>
+        <button class="tool-btn" data-tool="text" title="Text Tool">A</button>
+        <button class="tool-btn" data-tool="line" title="Line Tool">╱</button>
+        <button class="tool-btn" data-tool="curve" title="Curve Tool">〰️</button>
+        <button class="tool-btn" data-tool="rect" title="Rectangle">▭</button>
+        <button class="tool-btn" data-tool="polygon" title="Polygon">⬡</button>
+        <button class="tool-btn" data-tool="ellipse" title="Ellipse">◯</button>
+        <button class="tool-btn" data-tool="roundrect" title="Rounded Rect">▢</button>
+        <button class="tool-btn" data-tool="scissors" title="Freeform Select">✂️</button>
+      </div>
+      
+      <!-- Toolbox bottom display (showing line widths, typical of MS Paint tool options) -->
+      <div class="toolbox-options">
+        <div class="line-width-option active"></div>
+        <div class="line-width-option medium"></div>
+        <div class="line-width-option thick"></div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Container where cards scroll -->
+    <main id="feed" class="feed" aria-label="MS Paint canvas slides">
+      <!-- Skeleton screens (Paint style) shown until database finishes loading -->
+      <div class="card skeleton-card" aria-hidden="true">
+        <div class="paint-window skeleton-window">
+          <div class="window-title-bar">
+            <div class="window-title-text">🎨 Loading Canvas...</div>
+          </div>
+          <div class="paint-canvas">
+            <div class="canvas-left">
+              <div class="skel skel-title"></div>
+              <div class="skel skel-meta"></div>
+              <div class="skel skel-text"></div>
+              <div class="skel skel-text"></div>
+              <div class="skel skel-btn"></div>
+            </div>
+            <div class="canvas-right">
+              <div class="skel skel-poster"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom Palette Bar (Doubles as our Genre Filter Bar!) -->
+    <footer class="paint-palette-footer">
+      <div class="palette-colors-selected">
+        <!-- Active colors overlapping squares -->
+        <div class="color-box fg-color" id="active-fg-color" style="background-color: #000000;" title="Active Genre Color"></div>
+        <div class="color-box bg-color" style="background-color: #ffffff;" title="Canvas Color"></div>
+      </div>
+      
+      <!-- Palette List (Where genre chips are dynamically injected) -->
+      <nav id="filter-bar" class="filter-bar" aria-label="Genre Filter Palette"></nav>
+      
+      <!-- Windows XP status bar on bottom right -->
+      <div class="paint-status-bar">
+        <span class="status-msg" id="status-help">For Help, click a tool.</span>
+        <span class="status-coord">X: 128 , Y: 256</span>
+      </div>
+    </footer>
+
+  </div><!-- /.paint-workspace -->
+
+  <!-- Fullscreen Player Overlay -->
+  <div id="player-overlay" class="player-overlay" aria-hidden="true">
+    <div class="player-backdrop"></div>
+    <div class="player-container">
+      <div class="player-header">
+        <div class="player-title" id="player-title"></div>
+        <button class="player-close" id="player-close" aria-label="Close player">✕</button>
+      </div>
+      <div class="player-frame-wrap">
+        <iframe id="player-iframe" class="player-iframe" allowfullscreen allow="autoplay; fullscreen"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boot script -->
+  <script type="module" src="src/main.js"></script>
+
+  <!-- Interactive Toolbox tool selections -->
+  <script type="module">
+    document.addEventListener('DOMContentLoaded', () => {
+      const toolButtons = document.querySelectorAll('.tool-btn');
+      const body = document.body;
+      const statusHelp = document.getElementById('status-help');
+
+      toolButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          // Remove active class from all
+          toolButtons.forEach(b => b.classList.remove('active'));
+          // Set active on clicked
+          btn.classList.add('active');
+
+          // Change body cursor class
+          const tool = btn.dataset.tool;
+          body.className = `paint-cursor-${tool}`;
+
+          // Update status message
+          const toolNames = {
+            select: 'Select Tool: Highlight an area.',
+            eraser: 'Eraser: Rub out pixels.',
+            fill: 'Fill Bucket: Pour bucket of pure color.',
+            picker: 'Eyedropper: Pick color from canvas.',
+            zoom: 'Magnifier: Zoom in on text.',
+            pencil: 'Pencil: Draw fine clumsy lines.',
+            brush: 'Brush: Paint thick pixel strokes.',
+            spray: 'Airbrush: Spray pixel dots.',
+            text: 'Text Tool: Type Comic Sans reviews.',
+            line: 'Line: Draw perfectly straight rigid lines.',
+            curve: 'Curve: Draw awkward curvy strokes.',
+            rect: 'Rectangle: Paint sharp boxes.',
+            polygon: 'Polygon: Paint complicated angles.',
+            ellipse: 'Ellipse: Draw clumsy egg shapes.',
+            roundrect: 'Rounded Rect: Bevel your card frames.',
+            scissors: 'Freeform Select: Lasso messy shapes.'
+          };
+          statusHelp.textContent = toolNames[tool] || 'For Help, click a tool.';
+        });
+      });
+
+      // Line width selector behavior
+      const lineOptions = document.querySelectorAll('.line-width-option');
+      lineOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+          lineOptions.forEach(o => o.classList.remove('active'));
+          opt.classList.add('active');
+        });
+      });
+    });
+  </script>
+</body>
+</html>
