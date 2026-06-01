@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cureus — Curated Streaming Reviews</title>
+  <meta name="description" content="A single-page, curated streaming review site with a clumsy 90s Windows XP Paint aesthetic. Desktop-only, custom reviews, direct play via VidKing.">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+
+  <!-- Desktop-only Blue Screen of Death Mobile Block -->
+  <div id="desktop-blocker" style="display: none;">
+    <span class="bsod-title">Windows</span>
+    <p class="bsod-text">
+      A fatal exception 0xDE5709 (DESKTOP_REQUIRED) has occurred at your viewport. 
+      The current device appears to be a mobile or touch-screen device.
+    </p>
+    <p class="bsod-text">
+      Cureus is highly optimized for Desktop environments only to maintain the pixel-perfect MS Paint 90s workspace.
+    </p>
+    <p class="bsod-text">
+      * Press any key or get on a computer to continue.<br>
+      * Use a screen width greater than 768px and standard mouse input.<br>
+      * Dragging your finger won't scribble very well here anyway.
+    </p>
+    <p class="bsod-text" style="margin-top: 40px; text-align: center;">
+      Press any button to do absolutely nothing.
+    </p>
+  </div>
+
+  <!-- Main Paint App Shell -->
+  <div id="app-shell">
+    
+    <!-- Top Menu Bar -->
+    <header class="menu-bar">
+      <div class="menu-item" id="menu-file">
+        File
+        <div class="dropdown-menu">
+          <a href="#" class="dropdown-item" id="btn-menu-feed">Home Feed</a>
+          <a href="#admin" class="dropdown-item" id="btn-menu-admin">Admin Dashboard</a>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item" id="btn-menu-logout" style="display: none;">Logout Editor</a>
+        </div>
+      </div>
+      <div class="menu-item" id="menu-edit">
+        Edit
+        <div class="dropdown-menu">
+          <span class="dropdown-item" id="btn-menu-shuffle">Randomize Shuffle</span>
+          <span class="dropdown-item" id="btn-menu-clear-draw">Clear Screen Doodles</span>
+        </div>
+      </div>
+      <div class="menu-item" id="menu-help">
+        Help
+        <div class="dropdown-menu">
+          <span class="dropdown-item" id="btn-menu-about">About Cureus...</span>
+        </div>
+      </div>
+      <div style="margin-left: auto; display: flex; align-items: center; padding-right: 10px;">
+        <h1 style="font-size: 1.4rem; color: #404040; letter-spacing: 1px;">Cureus Paint</h1>
+      </div>
+    </header>
+
+    <!-- App Inner Area (Toolbox + Workspace) -->
+    <div style="display: flex; flex: 1; overflow: hidden; position: relative;">
+      
+      <!-- MS Paint Tool Box on the Left -->
+      <aside id="toolbox">
+        <!-- Freehand Pencil Tool -->
+        <button class="tool-btn active" id="tool-pencil" title="Pencil (Draw Doodles)" aria-label="Select Pencil">✏️</button>
+        <!-- Spray Can Tool -->
+        <button class="tool-btn" id="tool-spray" title="Airbrush (Spray Paint)" aria-label="Select Airbrush">💨</button>
+        <!-- Eraser Tool -->
+        <button class="tool-btn" id="tool-eraser" title="Eraser (Erase Doodles)" aria-label="Select Eraser">🧽</button>
+        <!-- Clear Screen Tool -->
+        <button class="tool-btn" id="tool-clear" title="Clear Canvas" aria-label="Clear Canvas">🗑️</button>
+      </aside>
+
+      <!-- Main Paint Workspace -->
+      <main id="workspace">
+        <div id="canvas-container">
+          
+          <!-- Drawing Board Canvas Layer for freehand doodles -->
+          <canvas id="scribble-board"></canvas>
+
+          <!-- 1. FEED VIEW (Scroll snap list of cards) -->
+          <div id="feed-view" class="feed-viewport">
+            
+            <!-- INITIAL LOADING SKELETON (rendered before JS data fetch) -->
+            <div class="skeleton-card" id="skeleton-loader">
+              <div class="review-left">
+                <div class="skeleton-text skeleton-outline" style="width: 80%; height: 50px;"></div>
+                <div class="skeleton-text skeleton-outline" style="width: 40%; height: 25px;"></div>
+                <div class="skeleton-text skeleton-outline" style="width: 100%; height: 120px; border-radius: 12px;"></div>
+                <div class="skeleton-text skeleton-outline" style="width: 30%; height: 40px;"></div>
+              </div>
+              <div class="review-right">
+                <div class="skeleton-outline" style="width: 320px; height: 480px;"></div>
+              </div>
+            </div>
+            
+            <!-- Cards will be dynamically injected here by main.js -->
+            
+          </div>
+
+          <!-- 2. ADMIN PANEL (Curation Interface) -->
+          <div id="admin-view">
+            <div class="clumsy-title-bar" style="margin-bottom: 20px;">
+              <span>Cureus Curation Console v1.0</span>
+              <button class="clumsy-close-btn" id="btn-admin-close" aria-label="Close Admin View">X</button>
+            </div>
+
+            <div class="admin-grid">
+              
+              <!-- Review Form -->
+              <section class="admin-form-container clumsy-box">
+                <h2 style="font-size: 2rem; margin-bottom: 10px; border-bottom: 2px solid #000;">Add / Edit Review</h2>
+                
+                <form id="review-form" onsubmit="return false;">
+                  <input type="hidden" id="form-review-id">
+                  
+                  <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="form-type">Type</label>
+                    <select class="clumsy-select" id="form-type" required>
+                      <option value="movie">Movie</option>
+                      <option value="tv">TV Show</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="form-title">Title</label>
+                    <input class="clumsy-input" type="text" id="form-title" placeholder="e.g. Pulp Fiction" required>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="form-tmdb-id">TMDB ID</label>
+                    <input class="clumsy-input" type="number" id="form-tmdb-id" placeholder="e.g. 680" required>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="form-year">Release Year</label>
+                    <input class="clumsy-input" type="number" id="form-year" placeholder="e.g. 1994">
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="form-poster">Poster TMDB Path</label>
+                    <input class="clumsy-input" type="text" id="form-poster" placeholder="e.g. /d552fv1gj.jpg">
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="form-genres">Genres (Comma separated)</label>
+                    <input class="clumsy-input" type="text" id="form-genres" placeholder="e.g. Crime, Thriller, Drama">
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 10px;" id="tv-only-fields">
+                    <div style="display: flex; gap: 10px;">
+                      <div style="flex: 1;">
+                        <label for="form-season">Season #</label>
+                        <input class="clumsy-input" type="number" id="form-season" placeholder="e.g. 1">
+                      </div>
+                      <div style="flex: 1;">
+                        <label for="form-episode">Episode #</label>
+                        <input class="clumsy-input" type="number" id="form-episode" placeholder="e.g. 1">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="form-rating">Star Rating (1 to 5)</label>
+                    <select class="clumsy-select" id="form-rating" required>
+                      <option value="5">★★★★★ (5/5)</option>
+                      <option value="4">★★★★☆ (4/5)</option>
+                      <option value="3">★★★☆☆ (3/5)</option>
+                      <option value="2">★★☆☆☆ (2/5)</option>
+                      <option value="1">★☆☆☆☆ (1/5)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="form-reviewer">Reviewer Name</label>
+                    <input class="clumsy-input" type="text" id="form-reviewer" value="The TasteMaker" required>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="form-review">The Review (Keep it punchy!)</label>
+                    <textarea class="clumsy-textarea" id="form-review" rows="5" placeholder="Write your handpicked scribbles..." required></textarea>
+                  </div>
+
+                  <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="clumsy-btn" id="btn-form-save" style="flex: 1; justify-content: center; background: #90ee90;">
+                      💾 Save Review
+                    </button>
+                    <button type="button" class="clumsy-btn" id="btn-form-clear" style="background: #ffa07a;">
+                      🧹 Reset
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              <!-- TMDB Integration & List of Reviews -->
+              <section class="admin-search-container">
+                
+                <!-- TMDB Search box -->
+                <div class="clumsy-box" style="margin-bottom: 20px;">
+                  <h3 style="font-size: 1.5rem; margin-bottom: 10px; border-bottom: 2px solid #000;">🔍 TMDB Metadata Fetcher</h3>
+                  <div style="display: flex; gap: 8px;">
+                    <input class="clumsy-input" type="text" id="input-tmdb-search" placeholder="Search Movie or TV Title..." style="flex: 1;">
+                    <button class="clumsy-btn" id="btn-tmdb-search">Go</button>
+                  </div>
+                  <div id="tmdb-search-indicator" style="display: none; font-size: 0.8rem; color: #666; margin-top: 5px;">Searching the archives...</div>
+                  
+                  <div class="search-results" id="tmdb-results" style="margin-top: 15px; display: none;">
+                    <!-- TMDB results will go here -->
+                  </div>
+                </div>
+
+                <!-- Existing reviews database list -->
+                <div class="clumsy-box">
+                  <h3 style="font-size: 1.5rem; margin-bottom: 10px; border-bottom: 2px solid #000;">📚 Existing Reviews</h3>
+                  <div id="admin-reviews-list" class="search-results" style="max-height: 350px;">
+                    <!-- Existing database reviews populated by JS -->
+                  </div>
+                </div>
+
+              </section>
+
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+    </div>
+
+    <!-- Bottom Paint Color Palette (Genre Pill filters!) -->
+    <nav id="palette-bar">
+      <!-- The selected color block indicator standard in MS Paint -->
+      <div class="selected-color-indicator">
+        <div class="indicator-secondary"></div>
+      </div>
+
+      <!-- Color grid representable as database genres -->
+      <div class="color-grid" id="genre-palette-grid">
+        <!-- Rendered dynamically by JS from database genres -->
+      </div>
+      
+      <div style="font-family: var(--font-pixel); font-size: 1rem; color: #404040; margin-left: auto;">
+        Palette = Genre Filter
+      </div>
+    </nav>
+
+    <!-- Paint Application Status Bar -->
+    <footer class="status-bar">
+      <div>For Help, click Help in the menu bar.</div>
+      <div style="display: flex; gap: 20px;">
+        <div class="status-field" id="status-coordinates">Cursor: 0, 0px</div>
+        <div class="status-field" id="status-selected-genre">Filter: NONE</div>
+        <div class="status-field" id="status-editor">Editor: Guest</div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- 3. FULLSCREEN PLAYBACK OVERLAY (XP Paint Window Parody) -->
+  <div id="player-overlay">
+    <div class="paint-window">
+      <!-- Window Title Bar -->
+      <div class="clumsy-title-bar">
+        <span id="player-window-title">VidKing Player v1.02</span>
+        <button class="clumsy-close-btn" id="btn-player-close" title="Close Player" aria-label="Close Player">X</button>
+      </div>
+
+      <!-- Window Fake Menu Bar -->
+      <div class="window-fake-menu">
+        <span>File</span>
+        <span>Playback</span>
+        <span>Quality (Auto)</span>
+        <span>Help</span>
+      </div>
+
+      <!-- Window Body (Fullscreen Iframe) -->
+      <div class="window-body">
+        <div class="iframe-container" id="player-iframe-root">
+          <!-- Iframe will be injected dynamically here -->
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar" style="border-top: 3px solid #000;">
+        <div>Connected via VidKing direct stream. Enjoy taste.</div>
+        <div class="status-field">1080p | stereo</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. AUTH / LOGIN OVERLAY WINDOW -->
+  <div id="auth-overlay">
+    <div class="paint-window auth-window">
+      <div class="clumsy-title-bar">
+        <span>Login: Cureus Editor</span>
+        <button class="clumsy-close-btn" id="btn-auth-close" aria-label="Close Login">X</button>
+      </div>
+      <div class="clumsy-box" style="margin: 15px; border-radius: 4px;">
+        <form id="auth-form" onsubmit="return false;">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="auth-email">Admin Email</label>
+            <input class="clumsy-input" type="email" id="auth-email" value="admin@cureus.local" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 15px;">
+            <label for="auth-password">Password</label>
+            <input class="clumsy-input" type="password" id="auth-password" placeholder="••••••••••••" required>
+          </div>
+          <div id="auth-error-message" style="display: none; color: #ff0000; font-size: 0.9rem; margin-bottom: 10px; font-family: var(--font-retro);"></div>
+          <button type="submit" class="clumsy-btn" id="btn-auth-submit" style="width: 100%; justify-content: center; background: #c0c0c0;">
+            🔑 Authenticate
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase client JS and Main JS bundles -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
