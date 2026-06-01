@@ -334,7 +334,7 @@ function shuffleAndRender() {
   const shuffledSeen = shuffle([...seen]);
   
   // Feed order: Unseen first, then Seen
-  shuffledQueue = [...shuffledUnseen, ...shuffledSeen];
+  const shuffledQueue = [...shuffledUnseen, ...shuffledSeen];
   
   renderFeed(shuffledQueue, shuffledUnseen.length === 0);
 }
