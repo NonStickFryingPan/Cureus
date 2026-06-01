@@ -206,16 +206,16 @@ function setupCanvasBoard() {
   canvas.addEventListener('mouseup', stopDraw);
   canvas.addEventListener('mouseleave', stopDraw);
 
-  // Forward wheel scrolling events from canvas to scrollable feed viewport
-  canvas.addEventListener('wheel', (e) => {
+  // Forward wheel scrolling events globally to bypass stationary mouse event suppression
+  window.addEventListener('wheel', (e) => {
     if (canvas.style.pointerEvents !== 'none') {
-      const viewport = document.getElementById('feed-view');
-      if (viewport) {
-        viewport.scrollBy({
-          top: e.deltaY,
-          behavior: 'auto'
-        });
-        e.preventDefault();
+      // Only forward scroll if the cursor is hovering over the drawing board canvas
+      if (e.target === canvas || canvas.contains(e.target)) {
+        const viewport = document.getElementById('feed-view');
+        if (viewport) {
+          viewport.scrollTop += e.deltaY;
+          e.preventDefault();
+        }
       }
     }
   }, { passive: false });
