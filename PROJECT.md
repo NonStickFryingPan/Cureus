@@ -1,10 +1,10 @@
-# P: Cureus | SCOPE: Single-page desktop-only streaming review site with 90s Windows XP Paint aesthetic | STATE: ACTIVE — Project initialized, ready for development.
-LAST: Project directory structure created | NEXT: Initialize Vite and install dependencies
+# P: Cureus | SCOPE: Single-page desktop-only streaming review site with 90s Windows XP Paint aesthetic | STATE: ACTIVE — Infrastructure set up, moving to Core UI and Styles.
+LAST: Initialized Vite and installed dependencies, configured .env | NEXT: Build index.html structure and MS Paint CSS styles
 TASKS: +done -blocked >next .todo
 > T1 Setup and Infrastructure
   + T1.1 Create project structure and configuration templates
-  . T1.2 Initialize package.json and install dependencies (Vite, Supabase JS)
-  . T1.3 Configure .env with Supabase and TMDB credentials
+  + T1.2 Initialize package.json and install dependencies (Vite, Supabase JS)
+  + T1.3 Configure .env with Supabase and TMDB credentials
 > T2 Core UI and Styles
   . T2.1 Build index.html structure
   . T2.2 Write 90s MS Paint CSS (pixel fonts, jagged boxes, retro palette)
