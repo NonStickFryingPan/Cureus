@@ -445,7 +445,7 @@ function renderFeed(queue, allSeen) {
           <span class="review-stars" title="${r.rating} stars">${starStr}</span>
         </div>
         <div class="review-genres">${genreSpans}</div>
-        <div class="reviewer-name">Reviewed by: ${r.reviewer} ${r.type === 'tv' ? `(S${r.season}E${r.episode})` : ''}</div>
+        <div class="reviewer-name">Reviewed by: ${r.reviewer}</div>
         
         <div class="review-text-container">
           <p class="review-text">${displayText}${shouldTruncate ? `<button class="read-more-btn" data-id="${r.id}" id="btn-more-${r.id}">...more</button>` : ''}</p>
@@ -624,13 +624,8 @@ function openPlayer(review) {
   
   titleSpan.textContent = `VidKing Stream: ${review.title} (${review.year}) - Paint Player`;
   
-  // Format VidKing URLs
-  let embedUrl = '';
-  if (review.type === 'movie') {
-    embedUrl = `https://www.vidking.net/embed/movie/${review.tmdb_id}?autoPlay=true`;
-  } else if (review.type === 'tv') {
-    embedUrl = `https://www.vidking.net/embed/tv/${review.tmdb_id}/${review.season || 1}/${review.episode || 1}?autoPlay=true`;
-  }
+  // Format VidKing Movie URL
+  const embedUrl = `https://www.vidking.net/embed/movie/${review.tmdb_id}?autoPlay=true`;
   
   // Inject Iframe
   iframeContainer.innerHTML = `

@@ -123,13 +123,8 @@
                 <form id="review-form" onsubmit="return false;">
                   <input type="hidden" id="form-review-id">
                   
-                  <div class="form-group" style="margin-bottom: 10px;">
-                    <label for="form-type">Type</label>
-                    <select class="clumsy-select" id="form-type" required>
-                      <option value="movie">Movie</option>
-                      <option value="tv">TV Show</option>
-                    </select>
-                  </div>
+                  <!-- Type is locked to Movie -->
+                  <input type="hidden" id="form-type" value="movie">
                   
                   <div class="form-group" style="margin-bottom: 10px;">
                     <label for="form-title">Title</label>
@@ -156,18 +151,7 @@
                     <input class="clumsy-input" type="text" id="form-genres" placeholder="e.g. Crime, Thriller, Drama">
                   </div>
 
-                  <div class="form-group" style="margin-bottom: 10px;" id="tv-only-fields">
-                    <div style="display: flex; gap: 10px;">
-                      <div style="flex: 1;">
-                        <label for="form-season">Season #</label>
-                        <input class="clumsy-input" type="number" id="form-season" placeholder="e.g. 1">
-                      </div>
-                      <div style="flex: 1;">
-                        <label for="form-episode">Episode #</label>
-                        <input class="clumsy-input" type="number" id="form-episode" placeholder="e.g. 1">
-                      </div>
-                    </div>
-                  </div>
+                  <!-- TV fields removed - Movie Curation Only -->
 
                   <div class="form-group" style="margin-bottom: 10px;">
                     <label for="form-rating">Star Rating (1 to 5)</label>

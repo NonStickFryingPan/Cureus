@@ -24,7 +24,6 @@ export async function initAdmin() {
   
   initialized = true;
   setupAuthListeners();
-  setupFormToggles();
   setupSearchActions();
   setupFormSubmit();
   setupLogoutAction();
@@ -113,25 +112,6 @@ function setupLogoutAction() {
   });
 }
 
-// --- Toggle TV Form Sub-fields ---
-function setupFormToggles() {
-  const typeSelect = document.getElementById('form-type');
-  const tvFields = document.getElementById('tv-only-fields');
-  
-  const toggle = () => {
-    if (typeSelect.value === 'tv') {
-      tvFields.style.display = 'block';
-    } else {
-      tvFields.style.display = 'none';
-      document.getElementById('form-season').value = '';
-      document.getElementById('form-episode').value = '';
-    }
-  };
-  
-  typeSelect.addEventListener('change', toggle);
-  toggle(); // Initial state
-}
-
 // --- Form Reset/Clear ---
 function clearForm() {
   document.getElementById('form-review-id').value = '';
@@ -141,13 +121,8 @@ function clearForm() {
   document.getElementById('form-year').value = '';
   document.getElementById('form-poster').value = '';
   document.getElementById('form-genres').value = '';
-  document.getElementById('form-season').value = '';
-  document.getElementById('form-episode').value = '';
   document.getElementById('form-rating').value = '5';
   document.getElementById('form-review').value = '';
-  
-  // Update TV fields display
-  document.getElementById('form-type').dispatchEvent(new Event('change'));
 }
 
 document.getElementById('btn-form-clear').addEventListener('click', clearForm);
@@ -174,13 +149,9 @@ function setupFormSubmit() {
       ? genreStr.split(',').map(s => s.trim()).filter(s => s.length > 0)
       : [];
       
-    // TV elements
-    const season = type === 'tv' ? parseInt(document.getElementById('form-season').value, 10) || 1 : null;
-    const episode = type === 'tv' ? parseInt(document.getElementById('form-episode').value, 10) || 1 : null;
-    
     const record = {
       tmdb_id,
-      type,
+      type: 'movie',
       title,
       year,
       poster,
@@ -188,8 +159,8 @@ function setupFormSubmit() {
       rating,
       reviewer,
       review,
-      season,
-      episode
+      season: null,
+      episode: null
     };
 
     const submitBtn = document.getElementById('btn-form-save');
@@ -268,7 +239,7 @@ async function loadAdminReviewsList() {
           <img src="https://image.tmdb.org/t/p/w92${r.poster}" alt="Poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2292%22 height=%22138%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23ccc%22/></svg>'">
           <div class="search-card-info">
             <div class="search-card-title">${r.title} <span style="font-size:0.9rem;">(${r.year})</span></div>
-            <div class="search-card-meta">${r.type.toUpperCase()} | ${stars}</div>
+            <div class="search-card-meta">Movie | ${stars}</div>
             <div class="search-card-meta" style="font-style: italic;">By ${r.reviewer}</div>
           </div>
         </div>
@@ -305,14 +276,9 @@ function setupDbListListeners() {
         document.getElementById('form-year').value = r.year || '';
         document.getElementById('form-poster').value = r.poster || '';
         document.getElementById('form-genres').value = r.genres ? r.genres.join(', ') : '';
-        document.getElementById('form-season').value = r.season || '';
-        document.getElementById('form-episode').value = r.episode || '';
         document.getElementById('form-rating').value = r.rating;
         document.getElementById('form-reviewer').value = r.reviewer;
         document.getElementById('form-review').value = r.review;
-        
-        // Trigger type changes
-        document.getElementById('form-type').dispatchEvent(new Event('change'));
         
         // Scroll form into view
         document.getElementById('review-form').scrollIntoView({ behavior: 'smooth' });
@@ -372,7 +338,7 @@ function setupSearchActions() {
       if (!tmdbToken) throw new Error('VITE_TMDB_ACCESS_TOKEN is missing in environment variables.');
       
       const response = await fetch(
-        `https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(query)}&include_adult=false`,
+        `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&include_adult=false`,
         {
           headers: {
             accept: 'application/json',
@@ -384,7 +350,7 @@ function setupSearchActions() {
       if (!response.ok) throw new Error('TMDB Search Request failed.');
       
       const data = await response.json();
-      const results = (data.results || []).filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+      const results = data.results || [];
       
       indicator.style.display = 'none';
       resultsContainer.style.display = 'flex';
@@ -395,9 +361,9 @@ function setupSearchActions() {
       }
       
       results.forEach(item => {
-        const title = item.title || item.name;
-        const type = item.media_type;
-        const date = item.release_date || item.first_air_date || '';
+        const title = item.title;
+        const type = 'movie';
+        const date = item.release_date || '';
         const year = date ? date.split('-')[0] : 'N/A';
         const posterPath = item.poster_path || '';
         const cardId = `tmdb-result-card-${item.id}`;
@@ -410,14 +376,14 @@ function setupSearchActions() {
           <img src="https://image.tmdb.org/t/p/w92${posterPath}" alt="Poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2292%22 height=%22138%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23ccc%22/></svg>'">
           <div class="search-card-info">
             <div class="search-card-title">${title}</div>
-            <div class="search-card-meta">${type.toUpperCase()} | Release: ${year}</div>
+            <div class="search-card-meta">MOVIE | Release: ${year}</div>
             <div class="search-card-meta">TMDB ID: ${item.id}</div>
           </div>
         `;
         
         // Click to auto-fill form
         card.addEventListener('click', () => {
-          document.getElementById('form-type').value = type;
+          document.getElementById('form-type').value = 'movie';
           document.getElementById('form-title').value = title;
           document.getElementById('form-tmdb-id').value = item.id;
           document.getElementById('form-year').value = year !== 'N/A' ? year : '';
@@ -428,9 +394,6 @@ function setupSearchActions() {
             ? item.genre_ids.map(id => TMDB_GENRES[id]).filter(Boolean)
             : [];
           document.getElementById('form-genres').value = genreNames.join(', ');
-          
-          // Toggles
-          document.getElementById('form-type').dispatchEvent(new Event('change'));
           
           // Flash form background to indicate autofill succeeded
           const formSec = document.querySelector('.admin-form-container');
