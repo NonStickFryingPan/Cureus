@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cureus — Admin</title>
+  <link rel="preconnect" href="https://api.themoviedb.org" />
+  <link rel="preconnect" href="https://image.tmdb.org" />
+  <style>
+    /* =========================================================
+       Cureus Admin — 90s Windows XP Paint style
+       ========================================================= */
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Tahoma', 'Segoe UI', Arial, sans-serif;
+      background: #ece9d8;
+      color: #000;
+      padding: 20px;
+    }
+
+    /* ---- Auth ---- */
+    .hidden { display: none !important; }
+
+    .auth-container {
+      max-width: 380px;
+      margin: 80px auto;
+      background: #d4d0c8;
+      border: 2px solid #0a246a;
+      border-radius: 2px;
+      box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+      padding: 0;
+    }
+
+    .auth-titlebar {
+      background: linear-gradient(90deg, #0a246a, #3a6ea5);
+      color: #fff;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 0.3px;
+    }
+
+    .auth-body {
+      padding: 20px;
+    }
+
+    .auth-body label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
+      color: #333;
+    }
+
+    .auth-body input[type="email"],
+    .auth-body input[type="password"] {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 13px;
+      border: 2px solid #808080;
+      border-right-color: #fff;
+      border-bottom-color: #fff;
+      background: #fff;
+      margin-bottom: 12px;
+      font-family: inherit;
+    }
+
+    .auth-body input:focus {
+      outline: none;
+      border-color: #0a246a;
+      border-right-color: #3a6ea5;
+      border-bottom-color: #3a6ea5;
+    }
+
+    .auth-error {
+      color: #a00;
+      font-size: 12px;
+      margin-bottom: 10px;
+      padding: 6px 8px;
+      background: #fff0f0;
+      border: 1px solid #d00;
+    }
+
+    .btn {
+      font-family: 'Tahoma', Arial, sans-serif;
+      font-size: 12px;
+      padding: 6px 16px;
+      background: #d4d0c8;
+      border: 2px solid #fff;
+      border-right-color: #808080;
+      border-bottom-color: #808080;
+      cursor: pointer;
+      color: #000;
+    }
+
+    .btn:active {
+      border: 2px solid #808080;
+      border-right-color: #fff;
+      border-bottom-color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #0a246a;
+      color: #fff;
+      border-color: #3a6ea5;
+      border-right-color: #082050;
+      border-bottom-color: #082050;
+    }
+
+    .btn-primary:active {
+      border-color: #082050;
+      border-right-color: #3a6ea5;
+      border-bottom-color: #3a6ea5;
+    }
+
+    .btn-danger {
+      background: #8a0a0a;
+      color: #fff;
+      border-color: #c03030;
+      border-right-color: #600000;
+      border-bottom-color: #600000;
+    }
+
+    /* ---- Dashboard ---- */
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #d4d0c8;
+      border: 2px solid #0a246a;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+    }
+
+    .dashboard-header h1 {
+      font-size: 18px;
+      font-weight: normal;
+      color: #0a246a;
+    }
+
+    /* ---- Editor pane ---- */
+    .editor-pane {
+      background: #d4d0c8;
+      border: 2px solid #808080;
+      border-right-color: #fff;
+      border-bottom-color: #fff;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .editor-pane h2 {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: #0a246a;
+    }
+
+    .editor-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .editor-col {
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 3px;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 5px 7px;
+      font-size: 13px;
+      border: 2px solid #808080;
+      border-right-color: #fff;
+      border-bottom-color: #fff;
+      background: #fff;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      height: 120px;
+      resize: vertical;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #0a246a;
+    }
+
+    .form-group select {
+      appearance: none;
+      background: #fff;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* ---- TMDB Search ---- */
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 2px solid #808080;
+      border-top: none;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .search-results.hidden {
+      display: none;
+    }
+
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .search-result-item:hover {
+      background: #0a246a;
+      color: #fff;
+    }
+
+    .search-poster {
+      width: 40px;
+      height: 60px;
+      object-fit: cover;
+      border: 1px solid #ccc;
+    }
+
+    .search-poster-empty {
+      width: 40px;
+      height: 60px;
+      background: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #888;
+      border: 1px solid #ccc;
+    }
+
+    .search-result-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .search-result-info span {
+      font-size: 11px;
+      color: #666;
+    }
+
+    .search-result-item:hover .search-result-info span {
+      color: #ccc;
+    }
+
+    .search-hint {
+      padding: 10px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .search-hint.error {
+      color: #a00;
+    }
+
+    /* ---- Poster Preview ---- */
+    .poster-preview {
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    .poster-preview.hidden {
+      display: none;
+    }
+
+    .poster-preview-img {
+      max-width: 150px;
+      border: 2px solid #808080;
+      border-right-color: #fff;
+      border-bottom-color: #fff;
+    }
+
+    .poster-preview-empty {
+      padding: 30px 10px;
+      background: #ddd;
+      color: #888;
+      font-size: 12px;
+    }
+
+    /* ---- Reviews table ---- */
+    .reviews-table-wrapper {
+      background: #d4d0c8;
+      border: 2px solid #808080;
+      border-right-color: #fff;
+      border-bottom-color: #fff;
+      overflow-x: auto;
+    }
+
+    .reviews-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .reviews-table th {
+      background: #0a246a;
+      color: #fff;
+      padding: 6px 10px;
+      text-align: left;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .reviews-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #aaa;
+      vertical-align: middle;
+    }
+
+    .reviews-table tr:nth-child(even) {
+      background: #e8e4d8;
+    }
+
+    .reviews-table tr:hover {
+      background: #c0d0e8;
+    }
+
+    .reviews-table .poster-cell img {
+      width: 30px;
+      height: 45px;
+      object-fit: cover;
+      border: 1px solid #999;
+    }
+
+    .reviews-table .actions-cell {
+      white-space: nowrap;
+    }
+
+    .reviews-table .actions-cell button {
+      margin-right: 4px;
+    }
+
+    .review-text-preview {
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rating-stars {
+      color: #c90;
+      letter-spacing: 1px;
+    }
+
+    .empty-state {
+      padding: 30px;
+      text-align: center;
+      color: #888;
+      font-size: 13px;
+    }
+
+    /* ---- Utility ---- */
+    .status-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 10px;
+      border-radius: 2px;
+      background: #0a246a;
+      color: #fff;
+    }
+
+    .status-badge.tv {
+      background: #6a4a0a;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===================================================== -->
+  <!-- Auth Container -->
+  <!-- ===================================================== -->
+  <div id="auth-container" class="auth-container">
+    <div class="auth-titlebar">🔐 Cureus — Authenticate</div>
+    <div class="auth-body">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+
+      <div class="auth-error hidden"></div>
+
+      <button id="login-btn" class="btn btn-primary" style="width:100%">Sign In</button>
+    </div>
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- Dashboard Container -->
+  <!-- ===================================================== -->
+  <div id="dashboard-container" class="hidden">
+
+    <div class="dashboard-header">
+      <h1>🎬 Cureus — Review Curator</h1>
+      <button id="logout-btn" class="btn">Sign Out</button>
+    </div>
+
+    <!-- Editor -->
+    <div class="editor-pane">
+      <h2>✏️ New Review</h2>
+
+      <!-- TMDB Search -->
+      <div class="form-group search-wrapper">
+        <label for="search-input">Search Movie or TV Show</label>
+        <input type="text" id="search-input" placeholder="Type a title…" autocomplete="off" />
+        <div id="search-results" class="search-results hidden"></div>
+      </div>
+
+      <div class="editor-row">
+        <div class="editor-col">
+
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" readonly />
+          </div>
+
+          <div class="form-group" style="display:flex; gap:10px;">
+            <div style="flex:1;">
+              <label for="year">Year</label>
+              <input type="number" id="year" readonly />
+            </div>
+            <div style="flex:1;">
+              <label for="type">Type</label>
+              <select id="type">
+                <option value="movie">Movie</option>
+                <option value="tv">TV</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="genres">Genres (comma-separated)</label>
+            <input type="text" id="genres" readonly />
+          </div>
+
+          <input type="hidden" id="tmdb-id" />
+          <input type="hidden" id="poster-path" />
+
+        </div>
+
+        <div class="editor-col">
+
+          <div class="form-group">
+            <label for="reviewer">Reviewer Name</label>
+            <input type="text" id="reviewer" placeholder="e.g. Film Critic" />
+          </div>
+
+          <div class="form-group">
+            <label for="rating">Rating (1–5)</label>
+            <select id="rating">
+              <option value="5">★★★★★</option>
+              <option value="4">★★★★☆</option>
+              <option value="3">★★★☆☆</option>
+              <option value="2">★★☆☆☆</option>
+              <option value="1">★☆☆☆☆</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="review">Review</label>
+        <textarea id="review" placeholder="Write your review here…"></textarea>
+      </div>
+
+      <div id="poster-preview" class="poster-preview hidden"></div>
+
+      <div class="form-actions">
+        <button id="save-btn" class="btn btn-primary">Save Review</button>
+        <button id="cancel-btn" class="btn hidden">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Existing Reviews -->
+    <div class="reviews-table-wrapper">
+      <table class="reviews-table">
+        <thead>
+          <tr>
+            <th>Poster</th>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Year</th>
+            <th>Rating</th>
+            <th>Reviewer</th>
+            <th>Review</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="reviews-tbody">
+          <!-- populated by JS -->
+        </tbody>
+      </table>
+      <div id="empty-state" class="empty-state hidden">
+        No reviews yet. Search TMDB above and write your first review!
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- Scripts -->
+  <!-- ===================================================== -->
+  <script type="module">
+    import { AuthGate } from './auth.js';
+    import { fetchReviews, deleteReview } from '../supabase.js';
+    import { initEditor, loadForEdit, resetForm } from './editor.js';
+    import { posterUrl } from './tmdb.js';
+
+    // --- DOM refs ---
+    const $ = (sel) => document.querySelector(sel);
+    const refs = {
+      authContainer: $('#auth-container'),
+      dashboardContainer: $('#dashboard-container'),
+      emailInput: $('#email'),
+      passwordInput: $('#password'),
+      loginBtn: $('#login-btn'),
+      logoutBtn: $('#logout-btn'),
+    };
+
+    const editorRefs = {
+      searchInput: $('#search-input'),
+      searchResults: $('#search-results'),
+      title: $('#title'),
+      year: $('#year'),
+      posterPreview: $('#poster-preview'),
+      posterPath: $('#poster-path'),
+      type: $('#type'),
+      genres: $('#genres'),
+      tmdbId: $('#tmdb-id'),
+      review: $('#review'),
+      reviewer: $('#reviewer'),
+      rating: $('#rating'),
+      saveBtn: $('#save-btn'),
+      cancelBtn: $('#cancel-btn'),
+    };
+
+    const tbody = $('#reviews-tbody');
+    const emptyState = $('#empty-state');
+
+    // --- Render reviews table ---
+    async function renderReviewsTable() {
+      const { data, error } = await fetchReviews();
+
+      if (error) {
+        console.error('Failed to fetch reviews:', error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+
+      tbody.innerHTML = data
+        .map((r) => {
+          const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+          const posterImg = r.poster
+            ? `<img src="${posterUrl(r.poster, 'w92')}" alt="${r.title}" />`
+            : '<div style="width:30px;height:45px;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:9px;color:#888;">N/A</div>';
+
+          return `
+            <tr>
+              <td class="poster-cell">${posterImg}</td>
+              <td><strong>${r.title}</strong></td>
+              <td><span class="status-badge ${r.type}">${r.type}</span></td>
+              <td>${r.year || '—'}</td>
+              <td class="rating-stars">${stars}</td>
+              <td>${r.reviewer}</td>
+              <td><div class="review-text-preview">${r.review}</div></td>
+              <td class="actions-cell">
+                <button class="btn edit-btn" data-id="${r.id}">Edit</button>
+                <button class="btn btn-danger delete-btn" data-id="${r.id}">Delete</button>
+              </td>
+            </tr>
+          `;
+        })
+        .join('');
+
+      // Bind edit buttons
+      tbody.querySelectorAll('.edit-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const review = data.find((r) => r.id === id);
+          if (review) {
+            loadForEdit(review);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
+      });
+
+      // Bind delete buttons
+      tbody.querySelectorAll('.delete-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const review = data.find((r) => r.id === id);
+          if (!confirm(`Delete review for "${review?.title}"?`)) return;
+
+          btn.disabled = true;
+          btn.textContent = '…';
+
+          const { error } = await deleteReview(id);
+          if (error) {
+            alert(`Failed to delete: ${error.message}`);
+            btn.disabled = false;
+            btn.textContent = 'Delete';
+          } else {
+            await renderReviewsTable();
+          }
+        });
+      });
+    }
+
+    // --- Init ---
+    AuthGate.init(refs, async () => {
+      await initEditor(editorRefs);
+      await renderReviewsTable();
+    });
+  </script>
+</body>
+</html>
