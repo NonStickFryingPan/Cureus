@@ -172,21 +172,29 @@ function initDrawingLayer() {
 
     // Synchronize canvas buffer resolution with CSS display dimensions
     function resizeCanvas() {
-      // Create a temporary backup of drawn contents before resizing cleans it
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = canvas.width;
-      tempCanvas.height = canvas.height;
-      const tempCtx = tempCanvas.getContext('2d');
-      if (tempCtx && canvas.width > 0 && canvas.height > 0) {
-        tempCtx.drawImage(canvas, 0, 0);
-      }
+      try {
+        const width = canvas.offsetWidth;
+        const height = canvas.offsetHeight;
+        if (width === 0 || height === 0) return; // Skip resizing if not visible yet
 
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+        // Create a temporary backup of drawn contents before resizing cleans it
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        if (tempCtx && tempCanvas.width > 0 && tempCanvas.height > 0 && canvas.width > 0 && canvas.height > 0) {
+          tempCtx.drawImage(canvas, 0, 0);
+        }
 
-      // Restore drawn contents
-      if (tempCanvas.width > 0 && tempCanvas.height > 0) {
-        ctx.drawImage(tempCanvas, 0, 0);
+        canvas.width = width;
+        canvas.height = height;
+
+        // Restore drawn contents
+        if (ctx && tempCanvas.width > 0 && tempCanvas.height > 0 && canvas.width > 0 && canvas.height > 0) {
+          ctx.drawImage(tempCanvas, 0, 0);
+        }
+      } catch (err) {
+        console.warn('Canvas resize backup failed:', err);
       }
     }
 

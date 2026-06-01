@@ -7,8 +7,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error(
@@ -17,7 +17,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = (supabaseUrl && supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // -----------------------------------------------------------
 // Reviews — Public queries (used by the feed)
@@ -28,6 +30,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  * @returns {Promise<{data: Array|null, error: object|null}>}
  */
 export async function fetchReviews() {
+  if (!supabase) {
+    return { data: null, error: new Error('Supabase client is not initialized. Please set environment variables.') };
+  }
   const { data, error } = await supabase
     .from('reviews')
     .select('*')
@@ -42,6 +47,9 @@ export async function fetchReviews() {
  * @returns {Promise<{data: object|null, error: object|null}>}
  */
 export async function fetchReviewById(id) {
+  if (!supabase) {
+    return { data: null, error: new Error('Supabase client is not initialized.') };
+  }
   const { data, error } = await supabase
     .from('reviews')
     .select('*')
@@ -61,6 +69,9 @@ export async function fetchReviewById(id) {
  * @returns {Promise<{data: object|null, error: object|null}>}
  */
 export async function createReview(review) {
+  if (!supabase) {
+    return { data: null, error: new Error('Supabase client is not initialized.') };
+  }
   const { data, error } = await supabase
     .from('reviews')
     .insert([review])
@@ -77,6 +88,9 @@ export async function createReview(review) {
  * @returns {Promise<{data: object|null, error: object|null}>}
  */
 export async function updateReview(id, updates) {
+  if (!supabase) {
+    return { data: null, error: new Error('Supabase client is not initialized.') };
+  }
   const { data, error } = await supabase
     .from('reviews')
     .update(updates)
@@ -93,6 +107,9 @@ export async function updateReview(id, updates) {
  * @returns {Promise<{data: object|null, error: object|null}>}
  */
 export async function deleteReview(id) {
+  if (!supabase) {
+    return { data: null, error: new Error('Supabase client is not initialized.') };
+  }
   const { data, error } = await supabase
     .from('reviews')
     .delete()
@@ -114,6 +131,9 @@ export async function deleteReview(id) {
  * @returns {Promise<{data: object|null, error: object|null}>}
  */
 export async function signIn(email, password) {
+  if (!supabase) {
+    return { data: null, error: new Error('Supabase client is not initialized.') };
+  }
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -126,6 +146,9 @@ export async function signIn(email, password) {
  * @returns {Promise<{error: object|null}>}
  */
 export async function signOut() {
+  if (!supabase) {
+    return { error: new Error('Supabase client is not initialized.') };
+  }
   const { error } = await supabase.auth.signOut();
   return { error };
 }
@@ -135,6 +158,9 @@ export async function signOut() {
  * @returns {Promise<{data: {session: object|null}|null, error: object|null}>}
  */
 export async function getSession() {
+  if (!supabase) {
+    return { data: null, error: new Error('Supabase client is not initialized.') };
+  }
   const { data, error } = await supabase.auth.getSession();
   return { data, error };
 }
@@ -145,5 +171,8 @@ export async function getSession() {
  * @returns {object} Subscription object with .unsubscribe()
  */
 export function onAuthChange(callback) {
+  if (!supabase) {
+    return { data: { unsubscribe: () => {} } };
+  }
   return supabase.auth.onAuthStateChange(callback);
 }
