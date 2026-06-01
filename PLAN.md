@@ -142,6 +142,18 @@ Row-level security: public can SELECT, only authenticated user can INSERT/UPDATE
 
 ---
 
+## TODOs (Frontend Phase)
+
+### Redesign admin frontend
+Redo the admin dashboard UI when building the frontend:
+- `src/admin/index.html` — dashboard shell, login screen, reviews table
+- `src/admin/auth.js` — Supabase auth gate (login/logout)
+- `src/admin/editor.js` — review form, TMDB autofill, save to Supabase
+
+Keep `src/admin/tmdb.js` (TMDB API helpers) and `src/supabase.js` (Supabase client) — those are the backend-layer modules, no redesign needed.
+
+---
+
 ## What's Not In Scope
 
 - User accounts
