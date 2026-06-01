@@ -1,4 +1,5 @@
 import { fetchReviews } from './db.js';
+import { escapeHtml } from './utils.js';
 
 // --- Application State (Functional Pattern) ---
 let allReviews = [];
@@ -416,7 +417,7 @@ function renderFeed(queue, allSeen) {
     
     // Genres layout
     const genreSpans = r.genres
-      ? r.genres.map(g => `<span class="genre-pill">${g}</span>`).join('')
+      ? r.genres.map(g => `<span class="genre-pill">${escapeHtml(g)}</span>`).join('')
       : '';
       
     // Stars
@@ -429,16 +430,16 @@ function renderFeed(queue, allSeen) {
     // Build card HTML
     card.innerHTML = `
       <div class="review-left">
-        <h2 class="review-title">${r.title}</h2>
+        <h2 class="review-title">${escapeHtml(r.title)}</h2>
         <div class="review-meta">
-          <span>(${r.year})</span>
+          <span>(${escapeHtml(r.year)})</span>
           <span class="review-stars" title="${r.rating} stars">${starStr}</span>
         </div>
         <div class="review-genres">${genreSpans}</div>
-        <div class="reviewer-name">Reviewed by: ${r.reviewer}</div>
+        <div class="reviewer-name">Reviewed by: ${escapeHtml(r.reviewer)}</div>
         
         <div class="review-text-container">
-          <p class="review-text">${displayText}${shouldTruncate ? `<button class="read-more-btn" data-id="${r.id}" id="btn-more-${r.id}">...more</button>` : ''}</p>
+          <p class="review-text">${escapeHtml(displayText)}${shouldTruncate ? `<button class="read-more-btn" data-id="${r.id}" id="btn-more-${r.id}">...more</button>` : ''}</p>
         </div>
 
         <button class="clumsy-btn watch-now-btn" id="btn-watch-${r.id}" data-id="${r.id}">
@@ -448,7 +449,7 @@ function renderFeed(queue, allSeen) {
       
       <div class="review-right">
         <div class="poster-wrapper">
-          <img class="poster-image" src="https://image.tmdb.org/t/p/w500${r.poster}" alt="${r.title} Poster" loading="lazy">
+          <img class="poster-image" src="https://image.tmdb.org/t/p/w500${r.poster}" alt="${escapeHtml(r.title)} Poster" loading="lazy">
         </div>
       </div>
     `;
@@ -494,7 +495,7 @@ function setupFeedListeners() {
       const reviewObj = allReviews.find(r => r.id === id);
       if (reviewObj) {
         const textContainer = btn.closest('.review-text-container');
-        textContainer.innerHTML = `<p class="review-text">${reviewObj.review}</p>`;
+        textContainer.innerHTML = `<p class="review-text">${escapeHtml(reviewObj.review)}</p>`;
       }
     });
   });

@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import { fetchReviews, saveReview, deleteReview } from './db.js';
+import { escapeHtml } from './utils.js';
 
 // TMDB Genre ID lookup map
 const TMDB_GENRES = {
@@ -216,11 +217,11 @@ async function loadAdminReviewsList() {
       
       card.innerHTML = `
         <div style="display: flex; gap: 10px;">
-          <img src="https://image.tmdb.org/t/p/w92${r.poster}" alt="Poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2292%22 height=%22138%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23ccc%22/></svg>'">
+          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(r.poster)}" alt="Poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2292%22 height=%22138%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23ccc%22/></svg>'">
           <div class="search-card-info">
-            <div class="search-card-title">${r.title} <span style="font-size:0.9rem;">(${r.year})</span></div>
+            <div class="search-card-title">${escapeHtml(r.title)} <span style="font-size:0.9rem;">(${escapeHtml(r.year)})</span></div>
             <div class="search-card-meta">Movie | ${stars}</div>
-            <div class="search-card-meta" style="font-style: italic;">By ${r.reviewer}</div>
+            <div class="search-card-meta" style="font-style: italic;">By ${escapeHtml(r.reviewer)}</div>
           </div>
         </div>
         <div style="display: flex; flex-direction: column; justify-content: center; gap: 5px;">
@@ -348,11 +349,11 @@ function setupSearchActions() {
         card.id = cardId;
         
         card.innerHTML = `
-          <img src="https://image.tmdb.org/t/p/w92${posterPath}" alt="Poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2292%22 height=%22138%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23ccc%22/></svg>'">
+          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(posterPath)}" alt="Poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2292%22 height=%22138%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23ccc%22/></svg>'">
           <div class="search-card-info">
-            <div class="search-card-title">${title}</div>
-            <div class="search-card-meta">MOVIE | Release: ${year}</div>
-            <div class="search-card-meta">TMDB ID: ${item.id}</div>
+            <div class="search-card-title">${escapeHtml(title)}</div>
+            <div class="search-card-meta">MOVIE | Release: ${escapeHtml(year)}</div>
+            <div class="search-card-meta">TMDB ID: ${escapeHtml(item.id)}</div>
           </div>
         `;
         
