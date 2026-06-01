@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js';
+import { fetchReviews } from './db.js';
 
 // --- Application State (Functional Pattern) ---
 let allReviews = [];
@@ -306,14 +306,7 @@ function setupMenuActions() {
 // --- Supabase Data Loading ---
 async function loadReviews() {
   try {
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    allReviews = data || [];
+    allReviews = await fetchReviews();
     
     // Derive unique genres
     const uniqueGenres = new Set();
@@ -364,19 +357,9 @@ function shuffleAndRender() {
     filtered = allReviews.filter(r => r.genres && r.genres.includes(currentGenre));
   }
 
-  // Deduplicate by tmdb_id to prevent duplicate movie/TV cards in the feed
-  const seenTmdbIds = new Set();
-  const deduped = [];
-  filtered.forEach(r => {
-    if (!seenTmdbIds.has(r.tmdb_id)) {
-      seenTmdbIds.add(r.tmdb_id);
-      deduped.push(r);
-    }
-  });
-  
-  // Split into unseen and seen
-  const unseen = deduped.filter(r => !seenIds.includes(r.id));
-  const seen = deduped.filter(r => seenIds.includes(r.id));
+  // Split into unseen and seen (records are pre-deduplicated by db.js)
+  const unseen = filtered.filter(r => !seenIds.includes(r.id));
+  const seen = filtered.filter(r => seenIds.includes(r.id));
   
   // Fisher-Yates Shuffle
   const shuffle = (array) => {

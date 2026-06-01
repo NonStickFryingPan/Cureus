@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { fetchReviews, saveReview, deleteReview } from './db.js';
 
 // TMDB Genre ID lookup map
 const TMDB_GENRES = {
@@ -168,24 +169,9 @@ function setupFormSubmit() {
     submitBtn.textContent = 'Saving review...';
 
     try {
-      if (id) {
-        // Update
-        const { error } = await supabase
-          .from('reviews')
-          .update(record)
-          .eq('id', id);
-          
-        if (error) throw error;
-        alert('Review updated successfully!');
-      } else {
-        // Insert
-        const { error } = await supabase
-          .from('reviews')
-          .insert([record]);
-          
-        if (error) throw error;
-        alert('Review created successfully!');
-      }
+      // Save review using deep DB module (handles insert or update internally)
+      await saveReview({ id, ...record });
+      alert(id ? 'Review updated successfully!' : 'Review created successfully!');
 
       clearForm();
       
@@ -211,14 +197,8 @@ async function loadAdminReviewsList() {
   container.innerHTML = '<div style="font-size: 0.9rem; color:#888;">Fetching current library...</div>';
   
   try {
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('*')
-      .order('created_at', { ascending: false });
-      
-    if (error) throw error;
-    
-    currentReviews = data || [];
+    // Fetch reviews using deep DB module
+    currentReviews = await fetchReviews();
     container.innerHTML = '';
     
     if (currentReviews.length === 0) {
@@ -294,12 +274,7 @@ function setupDbListListeners() {
       const r = currentReviews.find(item => item.id === id);
       if (r && confirm(`Are you absolutely sure you want to delete the review for "${r.title}"?`)) {
         try {
-          const { error } = await supabase
-            .from('reviews')
-            .delete()
-            .eq('id', id);
-            
-          if (error) throw error;
+          await deleteReview(id);
           
           alert('Review deleted successfully.');
           
