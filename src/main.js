@@ -648,8 +648,7 @@ function openPlayer(review) {
   iframeContainer.innerHTML = `
     <iframe 
       id="stream-frame"
-      src="${embedUrl}" 
-      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+      src="${embedUrl}"
       allow="autoplay; fullscreen" 
       allowfullscreen
       title="${escapeHtml(review.title)} playback stream">
