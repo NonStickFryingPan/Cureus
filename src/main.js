@@ -639,17 +639,17 @@ function openPlayer(review) {
   const titleSpan = document.getElementById('player-window-title');
   const iframeContainer = document.getElementById('player-iframe-root');
   
-  titleSpan.textContent = `VidKing Stream: ${review.title} (${review.year}) - Paint Player`;
+  titleSpan.textContent = `${review.title} (${review.year}) - Cureus Player`;
   
-  // Format VidKing Movie URL
+  // Format embed URL
   const embedUrl = `https://www.vidking.net/embed/movie/${review.tmdb_id}?autoPlay=true`;
   
   // Inject Iframe
   iframeContainer.innerHTML = `
     <iframe 
-      id="vidking-stream-frame"
+      id="stream-frame"
       src="${embedUrl}" 
-      sandbox="allow-scripts allow-same-origin allow-popups"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
       allow="autoplay; fullscreen" 
       allowfullscreen
       title="${escapeHtml(review.title)} playback stream">
