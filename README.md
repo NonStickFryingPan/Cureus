@@ -6,7 +6,7 @@
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
 
-[Try it here!]((https://cureus.netlify.app/#))
+[Try it here!](https://cureus.netlify.app/#)
 
 <img width="1280" height="800" alt="{76B8E513-9738-453C-8F8B-0840EF077A8D}" src="https://github.com/user-attachments/assets/f13eb3f4-9225-473f-817e-c7dad1d36dcb" />
 
