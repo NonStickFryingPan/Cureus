@@ -42,6 +42,8 @@
           <a href="#admin" class="dropdown-item" id="btn-menu-admin">Admin Dashboard</a>
           <a href="#" class="dropdown-item" id="btn-menu-apply">Apply to be a Reviewer...</a>
           <div class="dropdown-divider"></div>
+          <span class="dropdown-item" id="btn-menu-search">Search Movies (Cmd+K)...</span>
+          <div class="dropdown-divider"></div>
           <a href="#" class="dropdown-item" id="btn-menu-logout" style="display: none;">Logout Editor</a>
         </div>
       </div>
@@ -80,6 +82,9 @@
         <button class="tool-btn" id="tool-eraser" title="Eraser (Erase Doodles)" aria-label="Select Eraser">🧽</button>
         <!-- Clear Screen Tool -->
         <button class="tool-btn" id="tool-clear" title="Clear Canvas" aria-label="Clear Canvas">🗑️</button>
+        <div style="grid-column: 1 / -1; border-top: 2px solid var(--paint-dark); margin: 4px 0;"></div>
+        <!-- Search Movies Tool -->
+        <button class="tool-btn" id="tool-search" title="Search Movies (Cmd+K)" aria-label="Search Movies">🔍</button>
       </aside>
 
       <!-- Main Paint Workspace -->
@@ -427,6 +432,65 @@ INSTRUCTIONS FOR USE:
           </button>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. SPOTLIGHT MOVIE SEARCH OVERLAY (MS Paint Window Parody) -->
+  <div id="spotlight-overlay">
+    <div class="paint-window spotlight-window">
+      <!-- Window Title Bar -->
+      <div class="clumsy-title-bar">
+        <span>🔍 Movie Search</span>
+        <button class="clumsy-close-btn" id="btn-spotlight-close" title="Close Search" aria-label="Close Search">X</button>
+      </div>
+
+      <!-- Window Fake Menu Bar -->
+      <div class="window-fake-menu">
+        <span>File</span>
+        <span id="spotlight-menu-search" style="font-weight: bold;">Search</span>
+        <span id="spotlight-menu-settings">Settings</span>
+        <span>Help</span>
+      </div>
+
+      <!-- Window Body -->
+      <div class="spotlight-body">
+        <!-- Search Input -->
+        <div class="spotlight-input-area">
+          <input type="text" id="spotlight-input" class="clumsy-input" placeholder="Type a movie title..." autofocus>
+        </div>
+
+        <!-- Results container -->
+        <div id="spotlight-results" class="spotlight-results">
+          <div class="spotlight-empty">
+            Start typing to search movies from TMDB
+          </div>
+        </div>
+
+        <!-- Settings pane (hidden by default) -->
+        <div id="spotlight-settings" class="spotlight-settings" style="display: none;">
+          <div class="clumsy-box">
+            <h3 style="font-size: 1.8rem; margin-bottom: 10px;">TMDB Token Settings</h3>
+            <p style="font-family: var(--font-clumsy); font-size: 1rem; margin-bottom: 10px;">
+              Movie search uses a shared API key. If searches are slow or you want your own quota,
+              paste your TMDB API Read Access Token below.
+            </p>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label for="spotlight-token-input" style="font-family: var(--font-pixel); font-size: 1.3rem;">TMDB Token</label>
+              <input type="text" id="spotlight-token-input" class="clumsy-input" placeholder="Paste your TMDB API Read Access Token...">
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="clumsy-btn" id="btn-spotlight-token-save" style="flex: 1; justify-content: center; background: #90ee90;">Save Token</button>
+              <button class="clumsy-btn" id="btn-spotlight-token-clear" style="background: #ffa07a;">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar" style="border-top: 3px solid #000;">
+        <div id="spotlight-status-left">Type to search movies</div>
+        <div class="status-field" id="spotlight-status-right">TMDB</div>
       </div>
     </div>
   </div>

@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupPlayerModal();
   setupReviewerModal();
   setupGlobalEscapeHandler();
+  setupSpotlightSearch();
   
   // Track cursor coordinates standard in MS Paint
   const workspace = document.getElementById('workspace');
@@ -261,6 +262,11 @@ function setupToolbar() {
     });
   });
 
+  // Search button (not a drawing tool)
+  document.getElementById('tool-search').addEventListener('click', () => {
+    if (window.openSpotlight) window.openSpotlight();
+  });
+
   // Eraser clears drawings if double clicked, or clear button clicked
   document.getElementById('tool-clear').addEventListener('click', clearCanvas);
 }
@@ -285,6 +291,11 @@ function setupMenuActions() {
 
   document.getElementById('btn-menu-shuffle').addEventListener('click', () => {
     shuffleAndRender();
+  });
+
+  document.getElementById('btn-menu-search').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (window.openSpotlight) window.openSpotlight();
   });
 
   document.getElementById('btn-menu-clear-draw').addEventListener('click', () => {
@@ -720,6 +731,265 @@ function setupReviewerModal() {
 function openReviewerModal() {
   const overlay = document.getElementById('reviewer-overlay');
   overlay.style.display = 'flex';
+}
+
+// --- Spotlight Movie Search Overlay (Cmd+K) ---
+function setupSpotlightSearch() {
+  const overlay = document.getElementById('spotlight-overlay');
+  const input = document.getElementById('spotlight-input');
+  const results = document.getElementById('spotlight-results');
+  const settings = document.getElementById('spotlight-settings');
+  const statusLeft = document.getElementById('spotlight-status-left');
+  const statusRight = document.getElementById('spotlight-status-right');
+
+  const SEARCH_FAST_LIMIT = 30;
+  let searchTimer = null;
+  let curatedIds = new Set();
+
+  // TMDB genre ID mapping for result labels
+  const GENRE_NAMES = {
+    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+    99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+    27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
+    10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western'
+  };
+
+  // Load curated movie IDs from our DB
+  async function loadCuratedIds() {
+    try {
+      const reviews = await fetchReviews();
+      curatedIds = new Set(reviews.map(r => Number(r.tmdb_id)));
+    } catch {}
+  }
+  loadCuratedIds();
+
+  function getSearchCount() {
+    return parseInt(sessionStorage.getItem('cureus_search_count') || '0');
+  }
+
+  function incrementSearchCount() {
+    const count = getSearchCount() + 1;
+    sessionStorage.setItem('cureus_search_count', String(count));
+    return count;
+  }
+
+  function getTmdbToken() {
+    const custom = sessionStorage.getItem('cureus_custom_tmdb_token');
+    return custom || import.meta.env.VITE_TMDB_ACCESS_TOKEN;
+  }
+
+  function isSlowMode() {
+    return getSearchCount() >= SEARCH_FAST_LIMIT;
+  }
+
+  // Open / Close
+  function openSpotlight() {
+    overlay.style.display = 'flex';
+    input.value = '';
+    results.innerHTML = '<div class="spotlight-empty">Start typing to search movies from TMDB</div>';
+    settings.style.display = 'none';
+    results.style.display = 'flex';
+    document.getElementById('spotlight-menu-search').style.fontWeight = 'bold';
+    document.getElementById('spotlight-menu-settings').style.fontWeight = 'normal';
+    updateStatus();
+    setTimeout(() => input.focus(), 100);
+  }
+
+  function closeSpotlight() {
+    overlay.style.display = 'none';
+    clearTimeout(searchTimer);
+  }
+
+  function updateStatus() {
+    const count = getSearchCount();
+    const slow = isSlowMode();
+    if (slow) {
+      statusLeft.textContent = '\u26A0\uFE0F Slow mode - ' + count + ' searches used. Add your own TMDB token in Settings for full speed.';
+    } else {
+      statusLeft.textContent = (SEARCH_FAST_LIMIT - count) + ' fast searches remaining';
+    }
+    const hasCustom = sessionStorage.getItem('cureus_custom_tmdb_token');
+    statusRight.textContent = hasCustom ? 'TMDB (custom token)' : 'TMDB';
+  }
+
+  // Search
+  async function performSearch(query) {
+    if (query.length < 2) {
+      results.innerHTML = '<div class="spotlight-empty">Type at least 2 characters</div>';
+      return;
+    }
+
+    const token = getTmdbToken();
+    if (!token) {
+      results.innerHTML = '<div class="spotlight-error">No TMDB token configured. Add one in Settings.</div>';
+      return;
+    }
+
+    results.innerHTML = '<div class="spotlight-loading">Searching movies...</div>';
+
+    try {
+      const response = await fetch(
+        'https://api.themoviedb.org/3/search/movie?query=' + encodeURIComponent(query) + '&include_adult=false',
+        { headers: { accept: 'application/json', Authorization: 'Bearer ' + token } }
+      );
+
+      if (!response.ok) throw new Error('TMDB responded with ' + response.status);
+
+      const data = await response.json();
+      const movies = data.results || [];
+
+      incrementSearchCount();
+      updateStatus();
+      renderResults(movies);
+    } catch (err) {
+      results.innerHTML = '<div class="spotlight-error">Search failed: ' + escapeHtml(err.message) + '</div>';
+    }
+  }
+
+  function renderResults(movies) {
+    if (movies.length === 0) {
+      results.innerHTML = '<div class="spotlight-empty">No movies found</div>';
+      return;
+    }
+
+    let html = '';
+
+    if (isSlowMode()) {
+      html += '<div class="spotlight-slow-notice">\u26A0\uFE0F Slow mode active - searches are delayed to protect API quota. Add your own TMDB token in Settings for full speed.</div>';
+    }
+
+    movies.forEach(function (movie) {
+      const title = movie.title || 'Unknown';
+      const year = movie.release_date ? movie.release_date.split('-')[0] : 'N/A';
+      const posterPath = movie.poster_path;
+      const posterSrc = posterPath
+        ? 'https://image.tmdb.org/t/p/w92' + escapeHtml(posterPath)
+        : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="46" height="69"><rect width="100%" height="100%" fill="%23ccc"/></svg>';
+      const isCurated = curatedIds.has(Number(movie.id));
+      const badge = isCurated ? '<span class="spotlight-curated-badge">[CURATED]</span>' : '';
+
+      const genreLabels = (movie.genre_ids || [])
+        .map(function (id) { return GENRE_NAMES[id]; })
+        .filter(Boolean)
+        .join(', ') || 'Movie';
+
+      html += '<div class="spotlight-result-card" data-tmdb-id="' + movie.id + '" data-title="' + escapeHtml(title) + '" data-year="' + escapeHtml(year) + '">' +
+        '<img src="' + posterSrc + '" alt="' + escapeHtml(title) + '" loading="lazy">' +
+        '<div class="spotlight-result-info">' +
+        '<div class="spotlight-result-title">' + escapeHtml(title) + ' <span style="font-size:0.9rem;color:var(--paint-shadow-dark);">(' + escapeHtml(year) + ')</span>' + badge + '</div>' +
+        '<div class="spotlight-result-meta">' + escapeHtml(genreLabels) + '</div>' +
+        '</div>' +
+        '<button class="clumsy-btn spotlight-play-btn">\u25B6 Play</button>' +
+        '</div>';
+    });
+
+    results.innerHTML = html;
+
+    // Wire play buttons
+    results.querySelectorAll('.spotlight-play-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const card = btn.closest('.spotlight-result-card');
+        const tmdbId = parseInt(card.dataset.tmdbId, 10);
+        const title = card.dataset.title;
+        const year = card.dataset.year;
+
+        // Find matching review for rich player experience
+        const review = allReviews.find(function (r) { return Number(r.tmdb_id) === tmdbId; });
+        if (review) {
+          openPlayer(review);
+        } else {
+          openPlayer({
+            tmdb_id: tmdbId,
+            title: title,
+            year: year || null,
+            reviewer: 'Cureus',
+            rating: 0,
+            review: '',
+            genres: [],
+            poster: null
+          });
+        }
+        closeSpotlight();
+      });
+    });
+  }
+
+  // --- Event wiring ---
+
+  // Close button
+  document.getElementById('btn-spotlight-close').addEventListener('click', closeSpotlight);
+
+  // Click backdrop to close
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closeSpotlight();
+  });
+
+  // Escape closes spotlight
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && overlay.style.display === 'flex') {
+      closeSpotlight();
+    }
+  });
+
+  // Cmd+K / Ctrl+K global trigger
+  document.addEventListener('keydown', function (e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      openSpotlight();
+    }
+  });
+
+  // Search input with debounce
+  input.addEventListener('input', function () {
+    clearTimeout(searchTimer);
+    const query = input.value.trim();
+
+    if (query.length < 2) {
+      results.innerHTML = '<div class="spotlight-empty">Type at least 2 characters</div>';
+      return;
+    }
+
+    const delay = isSlowMode() ? 2000 : 300;
+
+    searchTimer = setTimeout(function () { performSearch(query); }, delay);
+  });
+
+  // Settings toggle
+  document.getElementById('spotlight-menu-settings').addEventListener('click', function () {
+    const show = settings.style.display !== 'block';
+    settings.style.display = show ? 'block' : 'none';
+    results.style.display = show ? 'none' : 'flex';
+    document.getElementById('spotlight-menu-search').style.fontWeight = show ? 'normal' : 'bold';
+    document.getElementById('spotlight-menu-settings').style.fontWeight = show ? 'bold' : 'normal';
+
+    if (show) {
+      const existing = sessionStorage.getItem('cureus_custom_tmdb_token');
+      document.getElementById('spotlight-token-input').value = existing || '';
+    }
+  });
+
+  // Token save
+  document.getElementById('btn-spotlight-token-save').addEventListener('click', function () {
+    const token = document.getElementById('spotlight-token-input').value.trim();
+    if (token) {
+      sessionStorage.setItem('cureus_custom_tmdb_token', token);
+      updateStatus();
+      alert('Custom TMDB token saved for this session.');
+    } else {
+      alert('Please paste a valid TMDB API Read Access Token.');
+    }
+  });
+
+  // Token clear
+  document.getElementById('btn-spotlight-token-clear').addEventListener('click', function () {
+    sessionStorage.removeItem('cureus_custom_tmdb_token');
+    document.getElementById('spotlight-token-input').value = '';
+    updateStatus();
+  });
+
+  // Expose so menu/toolbar buttons can call it
+  window.openSpotlight = openSpotlight;
 }
 
 // Export functions for other scripts (like admin.js)
