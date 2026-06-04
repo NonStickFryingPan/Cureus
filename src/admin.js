@@ -223,7 +223,7 @@ async function loadAdminReviewsList() {
       
       card.innerHTML = `
         <div style="display: flex; gap: 10px;">
-          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(r.poster)}" alt="Poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2292%22 height=%22138%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23ccc%22/></svg>'">
+          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(r.poster)}" alt="Poster">
           <div class="search-card-info">
             <div class="search-card-title">${escapeHtml(r.title)} <span style="font-size:0.9rem;">(${escapeHtml(r.year)})</span></div>
             <div class="search-card-meta">Movie | ${stars}</div>
@@ -235,6 +235,14 @@ async function loadAdminReviewsList() {
           <button class="clumsy-btn delete-db-btn" data-id="${r.id}" style="font-size: 1rem; padding: 2px 8px; background: #ffe0e0;" id="btn-delete-${r.id}">Delete</button>
         </div>
       `;
+      
+      // Attach fallback for broken poster images
+      const posterImg = card.querySelector('img');
+      if (posterImg) {
+        posterImg.addEventListener('error', () => {
+          posterImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="92" height="138"><rect width="100%" height="100%" fill="%23ccc"/></svg>';
+        });
+      }
       
       container.appendChild(card);
     });
@@ -373,7 +381,7 @@ function setupSearchActions() {
         }
         
         card.innerHTML = `
-          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(posterPath)}" alt="Poster" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2292%22 height=%22138%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23ccc%22/></svg>'">
+          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(posterPath)}" alt="Poster">
           <div class="search-card-info">
             <div class="search-card-title">${escapeHtml(title)}${badge}</div>
             <div class="search-card-meta">MOVIE | Release: ${escapeHtml(year)}</div>
@@ -433,6 +441,14 @@ function setupSearchActions() {
         });
         
         resultsContainer.appendChild(card);
+        
+        // Attach fallback for broken poster images
+        const posterImg = card.querySelector('img');
+        if (posterImg) {
+          posterImg.addEventListener('error', () => {
+            posterImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="92" height="138"><rect width="100%" height="100%" fill="%23ccc"/></svg>';
+          });
+        }
       });
       
     } catch (err) {
