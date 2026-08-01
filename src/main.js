@@ -3,7 +3,7 @@ import { escapeHtml } from './utils.js';
 
 // --- Application State (Functional Pattern) ---
 let allReviews = [];
-let currentGenre = null;
+let currentColor = '#000000';
 let activeTool = 'cursor'; // default pointer
 let isDrawing = false;
 let lastX = 0;
@@ -160,7 +160,7 @@ function setupCanvasBoard() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    ctx.strokeStyle = '#000000';
+    ctx.strokeStyle = currentColor;
     
     if (activeTool === 'pencil') {
       ctx.lineWidth = 2;
@@ -170,7 +170,7 @@ function setupCanvasBoard() {
       ctx.stroke();
     } else if (activeTool === 'spray') {
       // Classic MS Paint spray paint scatter
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = currentColor;
       const density = 15;
       for (let i = 0; i < density; i++) {
         const angle = Math.random() * Math.PI * 2;
@@ -329,16 +329,8 @@ async function loadReviews() {
   try {
     allReviews = await fetchReviews();
     
-    // Derive unique genres
-    const uniqueGenres = new Set();
-    allReviews.forEach(r => {
-      if (Array.isArray(r.genres)) {
-        r.genres.forEach(g => uniqueGenres.add(g));
-      }
-    });
-    
-    // Set up Palette bar with unique genres
-    renderGenrePalette(Array.from(uniqueGenres));
+    // Set up Palette bar with drawing colors
+    renderColorPalette();
 
     // Initial shuffle and render
     shuffleAndRender();
@@ -380,12 +372,6 @@ function markAsSeen(id) {
 function shuffleAndRender() {
   const seenIds = getSeenIds();
   
-  // Filter by genre
-  let filtered = allReviews;
-  if (currentGenre) {
-    filtered = allReviews.filter(r => r.genres && r.genres.includes(currentGenre));
-  }
-
   // Split into unseen and seen (records are pre-deduplicated by db.js)
   const unseen = filtered.filter(r => !seenIds.includes(r.id));
   const seen = filtered.filter(r => seenIds.includes(r.id));
@@ -422,7 +408,7 @@ function renderFeed(queue, allSeen) {
         <div style="text-align: center;">
           <h2 class="review-title" style="font-size: 3rem;">No reviews found</h2>
           <p style="font-family: var(--font-clumsy); font-size: 1.5rem; margin-top: 20px;">
-            Nothing curated for genre: <strong>${escapeHtml(currentGenre || 'All')}</strong> yet!
+            Nothing curated yet!
           </p>
         </div>
       </div>
@@ -555,56 +541,26 @@ function setupSeenObserver() {
   cards.forEach(card => seenObserver.observe(card));
 }
 
-// --- Dynamic Genre Palette Renderer ---
-function renderGenrePalette(genres) {
+// --- Color Palette Renderer (picks drawing color) ---
+function renderColorPalette() {
   const paletteGrid = document.getElementById('genre-palette-grid');
   paletteGrid.innerHTML = '';
 
-  // Add a special 'ALL' color box (Gray standard Paint color)
-  const allBox = document.createElement('div');
-  allBox.className = `color-box ${currentGenre === null ? 'active' : ''}`;
-  allBox.style.backgroundColor = '#808080';
-  allBox.title = 'Show All Genres';
-  allBox.innerHTML = `<span class="color-label">All Genres</span>`;
-  allBox.id = 'color-box-all';
-  
-  allBox.addEventListener('click', () => {
-    currentGenre = null;
-    document.querySelectorAll('.color-box').forEach(b => b.classList.remove('active'));
-    allBox.classList.add('active');
-    
-    // Update active color blocks
-    const indicatorAll = document.querySelector('.selected-color-indicator');
-    if (indicatorAll) indicatorAll.style.backgroundColor = '#808080';
-    document.getElementById('status-selected-genre').textContent = 'Filter: NONE';
-    
-    shuffleAndRender();
-  });
-  
-  paletteGrid.appendChild(allBox);
-
-  // Render derived DB genres
-  genres.forEach((genre, index) => {
-    const color = paintColors[index % paintColors.length];
-    
+  paintColors.forEach((color, index) => {
     const box = document.createElement('div');
-    box.className = `color-box ${currentGenre === genre ? 'active' : ''}`;
+    box.className = `color-box ${color === currentColor ? 'active' : ''}`;
     box.style.backgroundColor = color;
-    box.title = `Filter by: ${genre}`;
-    box.innerHTML = `<span class="color-label">${escapeHtml(genre)}</span>`;
-    box.id = `color-box-${genre.toLowerCase().replace(/\s+/g, '-')}`;
+    box.title = color;
+    box.id = `color-box-${index}`;
     
     box.addEventListener('click', () => {
-      currentGenre = genre;
+      currentColor = color;
       document.querySelectorAll('.color-box').forEach(b => b.classList.remove('active'));
       box.classList.add('active');
       
-      // Update selected color indicator block
-      const indicatorColor = document.querySelector('.selected-color-indicator');
-      if (indicatorColor) indicatorColor.style.backgroundColor = color;
-      document.getElementById('status-selected-genre').textContent = `Filter: ${genre.toUpperCase()}`;
-      
-      shuffleAndRender();
+      // Update selected color indicator block (MS Paint style)
+      const indicator = document.querySelector('.selected-color-indicator');
+      if (indicator) indicator.style.backgroundColor = color;
     });
     
     paletteGrid.appendChild(box);
