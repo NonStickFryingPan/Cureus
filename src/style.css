@@ -504,20 +504,21 @@ h1, h2, h3, button, input, select, textarea {
   image-rendering: pixelated; /* Blown-up low-quality blocky look */
 }
 
-/* Watch button inside feed */
-.watch-now-btn {
-  align-self: flex-start;
+/* Watch + Delete button row inside feed */
+.review-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-top: 10px;
 }
 
 /* Admin-only delete button next to Watch Now (hidden unless logged in) */
 .admin-delete-btn {
   display: none;
-  margin-left: 8px;
   background: #ffe0e0;
 }
 body.is-admin .admin-delete-btn {
-  display: inline-block;
+  display: block;
 }
 
 /* --- OVERLAY MODAL (XP Paint Window Parody) --- */

@@ -461,12 +461,14 @@ function renderFeed(queue, allSeen) {
           <p class="review-text">${escapeHtml(displayText)}${shouldTruncate ? `<button class="read-more-btn" data-id="${r.id}" id="btn-more-${r.id}">...more</button>` : ''}</p>
         </div>
 
-        <button class="clumsy-btn watch-now-btn" id="btn-watch-${r.id}" data-id="${r.id}">
-          ▶ Watch Now
-        </button>
-        <button class="clumsy-btn admin-delete-btn" data-id="${r.id}" title="Delete from library">
-          🗑 Delete
-        </button>
+        <div class="review-actions">
+          <button class="clumsy-btn watch-now-btn" id="btn-watch-${r.id}" data-id="${r.id}">
+            ▶ Watch Now
+          </button>
+          <button class="clumsy-btn admin-delete-btn" data-id="${r.id}" title="Delete from library">
+            🗑 Delete
+          </button>
+        </div>
       </div>
       
       <div class="review-right">
