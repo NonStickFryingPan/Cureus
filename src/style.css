@@ -358,7 +358,7 @@ h1, h2, h3, button, input, select, textarea {
   -webkit-overflow-scrolling: touch;
   position: relative;
   z-index: 1;
-}
+  user-select: text; /* allow text selection/copy in the feed */}
 
 /* Snap card */
 .review-card {
