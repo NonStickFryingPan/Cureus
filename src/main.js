@@ -1,10 +1,12 @@
-import { fetchReviews } from './db.js';
+import { fetchReviews, deleteReview } from './db.js';
 import { escapeHtml } from './utils.js';
+import { supabase } from './supabase.js';
 
 // --- Application State (Functional Pattern) ---
 let allReviews = [];
 let currentColor = '#000000';
 let activeTool = 'cursor'; // default pointer
+let isAdmin = false;
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
@@ -15,6 +17,16 @@ const paintColors = [
   '#000000', '#808080', '#800000', '#808000', '#008000', '#008080', '#000080', '#800080',
   '#ffffff', '#c0c0c0', '#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff'
 ];
+
+// Track admin auth state — reveals delete buttons on cards when logged in
+supabase.auth.onAuthStateChange((_event, newSession) => {
+  isAdmin = !!newSession;
+  document.body.classList.toggle('is-admin', isAdmin);
+});
+supabase.auth.getSession().then(({ data }) => {
+  isAdmin = !!data.session;
+  document.body.classList.toggle('is-admin', isAdmin);
+});
 
 // --- Initialize App ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -452,6 +464,9 @@ function renderFeed(queue, allSeen) {
         <button class="clumsy-btn watch-now-btn" id="btn-watch-${r.id}" data-id="${r.id}">
           ▶ Watch Now
         </button>
+        <button class="clumsy-btn admin-delete-btn" data-id="${r.id}" title="Delete from library">
+          🗑 Delete
+        </button>
       </div>
       
       <div class="review-right">
@@ -514,6 +529,23 @@ function setupFeedListeners() {
       const reviewObj = allReviews.find(r => r.id === id);
       if (reviewObj) {
         openPlayer(reviewObj);
+      }
+    });
+  });
+
+  // Admin delete from homescreen (button only visible when logged in)
+  document.querySelectorAll('.admin-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const reviewObj = allReviews.find(r => r.id === id);
+      if (!reviewObj) return;
+      if (!confirm(`Delete "${reviewObj.title}" from the library?`)) return;
+      try {
+        await deleteReview(id);
+        allReviews = allReviews.filter(r => r.id !== id);
+        btn.closest('.review-card').remove();
+      } catch (err) {
+        alert('Delete failed: ' + err.message);
       }
     });
   });

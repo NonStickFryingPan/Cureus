@@ -510,6 +510,16 @@ h1, h2, h3, button, input, select, textarea {
   margin-top: 10px;
 }
 
+/* Admin-only delete button next to Watch Now (hidden unless logged in) */
+.admin-delete-btn {
+  display: none;
+  margin-left: 8px;
+  background: #ffe0e0;
+}
+body.is-admin .admin-delete-btn {
+  display: inline-block;
+}
+
 /* --- OVERLAY MODAL (XP Paint Window Parody) --- */
 #player-overlay {
   position: fixed;
