@@ -29,6 +29,7 @@ export async function initAdmin() {
   initialized = true;
   setupAuthListeners();
   setupSearchActions();
+  setupDbSearch();
   setupFormSubmit();
   setupLogoutAction();
   
@@ -199,6 +200,70 @@ function setupFormSubmit() {
 }
 
 // --- Fetch and Display Database Reviews ---
+function filterDbReviews(q) {
+  if (!q) return currentReviews;
+  return currentReviews.filter(r =>
+    r.title.toLowerCase().includes(q) ||
+    (r.genres || []).some(g => g.toLowerCase().includes(q)) ||
+    (r.reviewer || '').toLowerCase().includes(q)
+  );
+}
+
+function renderAdminDbList(list) {
+  const container = document.getElementById('admin-reviews-list');
+  container.innerHTML = '';
+  
+  if (list.length === 0) {
+    container.innerHTML = '<div style="font-size: 0.9rem; color:#888;">No reviews match.</div>';
+    return;
+  }
+  
+  list.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'search-card';
+    card.style.justifyContent = 'space-between';
+    card.id = `admin-db-card-${r.id}`;
+    
+    const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+    
+    card.innerHTML = `
+      <div style="display: flex; gap: 10px;">
+        <img src="https://image.tmdb.org/t/p/w92${escapeHtml(r.poster)}" alt="Poster">
+        <div class="search-card-info">
+          <div class="search-card-title">${escapeHtml(r.title)} <span style="font-size:0.9rem;">(${escapeHtml(r.year)})</span></div>
+          <div class="search-card-meta">Movie | ${stars}</div>
+          <div class="search-card-meta" style="font-style: italic;">By ${escapeHtml(r.reviewer)}</div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; justify-content: center; gap: 5px;">
+        <button class="clumsy-btn edit-db-btn" data-id="${r.id}" style="font-size: 1rem; padding: 2px 8px; background: #e0f0ff;" id="btn-edit-${r.id}">Edit</button>
+        <button class="clumsy-btn delete-db-btn" data-id="${r.id}" style="font-size: 1rem; padding: 2px 8px; background: #ffe0e0;" id="btn-delete-${r.id}">Delete</button>
+      </div>
+    `;
+    
+    // Attach fallback for broken poster images
+    const posterImg = card.querySelector('img');
+    if (posterImg) {
+      posterImg.addEventListener('error', () => {
+        posterImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="92" height="138"><rect width="100%" height="100%" fill="%23ccc"/></svg>';
+      });
+    }
+    
+    container.appendChild(card);
+  });
+  
+  // Bind edit/delete clicks
+  setupDbListListeners();
+}
+
+function setupDbSearch() {
+  const input = document.getElementById('input-db-search');
+  if (!input) return;
+  input.addEventListener('input', () => {
+    renderAdminDbList(filterDbReviews(input.value.trim().toLowerCase()));
+  });
+}
+
 async function loadAdminReviewsList() {
   const container = document.getElementById('admin-reviews-list');
   container.innerHTML = '<div style="font-size: 0.9rem; color:#888;">Fetching current library...</div>';
@@ -206,49 +271,10 @@ async function loadAdminReviewsList() {
   try {
     // Fetch reviews using deep DB module
     currentReviews = await fetchReviews();
-    container.innerHTML = '';
     
-    if (currentReviews.length === 0) {
-      container.innerHTML = '<div style="font-size: 0.9rem; color:#888;">No reviews in the database yet.</div>';
-      return;
-    }
-    
-    currentReviews.forEach(r => {
-      const card = document.createElement('div');
-      card.className = 'search-card';
-      card.style.justifyContent = 'space-between';
-      card.id = `admin-db-card-${r.id}`;
-      
-      const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
-      
-      card.innerHTML = `
-        <div style="display: flex; gap: 10px;">
-          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(r.poster)}" alt="Poster">
-          <div class="search-card-info">
-            <div class="search-card-title">${escapeHtml(r.title)} <span style="font-size:0.9rem;">(${escapeHtml(r.year)})</span></div>
-            <div class="search-card-meta">Movie | ${stars}</div>
-            <div class="search-card-meta" style="font-style: italic;">By ${escapeHtml(r.reviewer)}</div>
-          </div>
-        </div>
-        <div style="display: flex; flex-direction: column; justify-content: center; gap: 5px;">
-          <button class="clumsy-btn edit-db-btn" data-id="${r.id}" style="font-size: 1rem; padding: 2px 8px; background: #e0f0ff;" id="btn-edit-${r.id}">Edit</button>
-          <button class="clumsy-btn delete-db-btn" data-id="${r.id}" style="font-size: 1rem; padding: 2px 8px; background: #ffe0e0;" id="btn-delete-${r.id}">Delete</button>
-        </div>
-      `;
-      
-      // Attach fallback for broken poster images
-      const posterImg = card.querySelector('img');
-      if (posterImg) {
-        posterImg.addEventListener('error', () => {
-          posterImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="92" height="138"><rect width="100%" height="100%" fill="%23ccc"/></svg>';
-        });
-      }
-      
-      container.appendChild(card);
-    });
-    
-    // Bind edit/delete clicks
-    setupDbListListeners();
+    // Re-apply any active filter after reload
+    const q = (document.getElementById('input-db-search').value || '').trim().toLowerCase();
+    renderAdminDbList(filterDbReviews(q));
 
   } catch (err) {
     console.error('Error fetching admin reviews list:', err);
