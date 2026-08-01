@@ -512,6 +512,18 @@ h1, h2, h3, button, input, select, textarea {
   margin-top: 10px;
 }
 
+/* Uniform height + icon sizing for both action buttons */
+.review-actions .clumsy-btn {
+  height: 48px;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+.review-actions svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 /* Admin-only delete button next to Watch Now (hidden unless logged in) */
 .admin-delete-btn {
   display: none;
