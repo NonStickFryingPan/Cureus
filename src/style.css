@@ -279,25 +279,6 @@ h1, h2, h3, button, input, select, textarea {
   left: 1px;
 }
 
-.color-label {
-  font-family: var(--font-pixel);
-  font-size: 1rem;
-  margin-left: 5px;
-  white-space: nowrap;
-  pointer-events: none;
-  background: rgba(255,255,255,0.7);
-  padding: 0 4px;
-  border: 1px solid var(--paint-dark);
-  display: none;
-  position: absolute;
-  bottom: 25px;
-  z-index: 100;
-}
-
-.color-box:hover .color-label {
-  display: block;
-}
-
 /* Status Bar at the bottom */
 .status-bar {
   background: var(--paint-bg);

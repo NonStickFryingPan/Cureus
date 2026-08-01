@@ -1,18 +1,8 @@
 import { supabase } from './supabase.js';
 import { fetchReviews, saveReview, deleteReview } from './db.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, TMDB_GENRES } from './utils.js';
 
 let isSubmitting = false;
-
-// TMDB Genre ID lookup map
-const TMDB_GENRES = {
-  28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
-  99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
-  27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Science Fiction',
-  10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western',
-  10759: 'Action & Adventure', 10762: 'Kids', 10763: 'News', 10764: 'Reality',
-  10765: 'Sci-Fi & Fantasy', 10766: 'Soap', 10767: 'Talk', 10768: 'War & Politics'
-};
 
 // Admin State
 let session = null;
@@ -120,7 +110,6 @@ function setupLogoutAction() {
 // --- Form Reset/Clear ---
 function clearForm() {
   document.getElementById('form-review-id').value = '';
-  document.getElementById('form-type').value = 'movie';
   document.getElementById('form-title').value = '';
   document.getElementById('form-tmdb-id').value = '';
   document.getElementById('form-year').value = '';
@@ -142,7 +131,6 @@ function setupFormSubmit() {
     isSubmitting = true;
 
     const id = document.getElementById('form-review-id').value;
-    const type = document.getElementById('form-type').value;
     const title = document.getElementById('form-title').value;
     const tmdb_id = parseInt(document.getElementById('form-tmdb-id').value, 10);
     const year = parseInt(document.getElementById('form-year').value, 10) || null;
@@ -291,7 +279,6 @@ function setupDbListListeners() {
       const r = currentReviews.find(item => item.id === id);
       if (r) {
         document.getElementById('form-review-id').value = r.id;
-        document.getElementById('form-type').value = r.type;
         document.getElementById('form-title').value = r.title;
         document.getElementById('form-tmdb-id').value = r.tmdb_id;
         document.getElementById('form-year').value = r.year || '';
@@ -422,7 +409,6 @@ function setupSearchActions() {
           if (existing) {
             // Populate form with existing curated review for editing
             document.getElementById('form-review-id').value = existing.id;
-            document.getElementById('form-type').value = 'movie';
             document.getElementById('form-title').value = existing.title;
             document.getElementById('form-tmdb-id').value = existing.tmdb_id;
             document.getElementById('form-year').value = existing.year || '';
@@ -439,7 +425,6 @@ function setupSearchActions() {
           } else {
             // Populate form with TMDB metadata to create a new review
             document.getElementById('form-review-id').value = '';
-            document.getElementById('form-type').value = 'movie';
             document.getElementById('form-title').value = title;
             document.getElementById('form-tmdb-id').value = item.id;
             document.getElementById('form-year').value = year !== 'N/A' ? year : '';

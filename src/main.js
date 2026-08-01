@@ -1,5 +1,5 @@
 import { fetchReviews, deleteReview } from './db.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, TMDB_GENRES } from './utils.js';
 import { supabase } from './supabase.js';
 
 // --- Application State (Functional Pattern) ---
@@ -738,14 +738,6 @@ function setupSpotlightSearch() {
   let searchTimer = null;
   let curatedIds = new Set();
 
-  // TMDB genre ID mapping for result labels
-  const GENRE_NAMES = {
-    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
-    99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
-    27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
-    10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western'
-  };
-
   // Load curated movie IDs from our DB
   async function loadCuratedIds() {
     try {
@@ -861,7 +853,7 @@ function setupSpotlightSearch() {
       const badge = isCurated ? '<span class="spotlight-curated-badge">[CURATED]</span>' : '';
 
       const genreLabels = (movie.genre_ids || [])
-        .map(function (id) { return GENRE_NAMES[id]; })
+        .map(function (id) { return TMDB_GENRES[id]; })
         .filter(Boolean)
         .join(', ') || 'Movie';
 
