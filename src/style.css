@@ -515,10 +515,13 @@ h1, h2, h3, button, input, select, textarea {
 /* Admin-only delete button next to Watch Now (hidden unless logged in) */
 .admin-delete-btn {
   display: none;
-  background: #ffe0e0;
+  background: #ff8080; /* solid red, matches watch-now solidity */
 }
 body.is-admin .admin-delete-btn {
   display: block;
+}
+body.is-admin .admin-delete-btn:hover {
+  background: #ff6b6b;
 }
 
 /* --- OVERLAY MODAL (XP Paint Window Parody) --- */
