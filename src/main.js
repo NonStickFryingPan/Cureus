@@ -385,8 +385,8 @@ function shuffleAndRender() {
   const seenIds = getSeenIds();
   
   // Split into unseen and seen (records are pre-deduplicated by db.js)
-  const unseen = filtered.filter(r => !seenIds.includes(r.id));
-  const seen = filtered.filter(r => seenIds.includes(r.id));
+  const unseen = allReviews.filter(r => !seenIds.includes(r.id));
+  const seen = allReviews.filter(r => seenIds.includes(r.id));
   
   // Fisher-Yates Shuffle
   const shuffle = (array) => {
