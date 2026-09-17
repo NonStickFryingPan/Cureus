@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupToolbar();
   setupMenuActions();
   setupHashRouter();
-  setupPlayerModal();
   setupReviewerModal();
   setupGlobalEscapeHandler();
   setupSpotlightSearch();
@@ -112,7 +111,7 @@ function setupHashRouter() {
       palette.style.display = 'flex';
       
       // Reset view size / canvas resize
-      resizeCanvas();
+      if (window.resizeCanvas) window.resizeCanvas();
     }
   };
   
@@ -429,7 +428,7 @@ function renderFeed(queue, allSeen) {
   }
 
   // Draw cards
-  queue.forEach((r, idx) => {
+  queue.forEach((r) => {
     const card = document.createElement('article');
     card.className = 'review-card';
     card.dataset.id = r.id;
@@ -462,10 +461,6 @@ function renderFeed(queue, allSeen) {
         </div>
 
         <div class="review-actions">
-          <button class="clumsy-btn watch-now-btn" id="btn-watch-${r.id}" data-id="${r.id}">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8,5v14l11,-7z"/></svg>
-            Watch Now
-          </button>
           <button class="clumsy-btn admin-delete-btn" data-id="${r.id}" title="Delete from library">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V7H6V19zM19,4h-3.5l-1,-1h-5l-1,1H5v2h14V4z"/></svg>
             Delete
@@ -522,17 +517,6 @@ function setupFeedListeners() {
       if (reviewObj) {
         const textContainer = btn.closest('.review-text-container');
         textContainer.innerHTML = `<p class="review-text">${escapeHtml(reviewObj.review)}</p>`;
-      }
-    });
-  });
-
-  // Watch Now overlay triggers
-  document.querySelectorAll('.watch-now-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      const reviewObj = allReviews.find(r => r.id === id);
-      if (reviewObj) {
-        openPlayer(reviewObj);
       }
     });
   });
@@ -607,58 +591,11 @@ function renderColorPalette() {
 function setupGlobalEscapeHandler() {
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    const playerOverlay = document.getElementById('player-overlay');
     const reviewerOverlay = document.getElementById('reviewer-overlay');
-    if (playerOverlay.style.display === 'flex') {
-      playerOverlay.style.display = 'none';
-      document.getElementById('player-iframe-root').innerHTML = '';
-    } else if (reviewerOverlay.style.display === 'flex') {
+    if (reviewerOverlay && reviewerOverlay.style.display === 'flex') {
       reviewerOverlay.style.display = 'none';
     }
   });
-}
-
-// --- Watch Now Player Modal ---
-function setupPlayerModal() {
-  const overlay = document.getElementById('player-overlay');
-  const closeBtn = document.getElementById('btn-player-close');
-  
-  const close = () => {
-    overlay.style.display = 'none';
-    document.getElementById('player-iframe-root').innerHTML = ''; // Stop stream
-  };
-  
-  closeBtn.addEventListener('click', close);
-  
-  // Click overlay background to close
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) close();
-  });
-  
-}
-
-function openPlayer(review) {
-  const overlay = document.getElementById('player-overlay');
-  const titleSpan = document.getElementById('player-window-title');
-  const iframeContainer = document.getElementById('player-iframe-root');
-  
-  titleSpan.textContent = `${review.title} (${review.year}) - Cureus Player`;
-  
-  // Format embed URL
-  const embedUrl = `https://www.vidking.net/embed/movie/${review.tmdb_id}?autoPlay=true`;
-  
-  // Inject Iframe
-  iframeContainer.innerHTML = `
-    <iframe 
-      id="stream-frame"
-      src="${embedUrl}"
-      allow="autoplay; fullscreen" 
-      allowfullscreen
-      title="${escapeHtml(review.title)} playback stream">
-    </iframe>
-  `;
-  
-  overlay.style.display = 'flex';
 }
 
 // --- Reviewer Application Dialog Box Parody ---
@@ -857,44 +794,32 @@ function setupSpotlightSearch() {
         .filter(Boolean)
         .join(', ') || 'Movie';
 
-      html += '<div class="spotlight-result-card" data-tmdb-id="' + movie.id + '" data-title="' + escapeHtml(title) + '" data-year="' + escapeHtml(year) + '">' +
+      html += '<div class="spotlight-result-card' + (isCurated ? ' is-curated' : '') + '" data-tmdb-id="' + movie.id + '" data-title="' + escapeHtml(title) + '" data-year="' + escapeHtml(year) + '">' +
         '<img src="' + posterSrc + '" alt="' + escapeHtml(title) + '" loading="lazy">' +
         '<div class="spotlight-result-info">' +
         '<div class="spotlight-result-title">' + escapeHtml(title) + ' <span style="font-size:0.9rem;color:var(--paint-shadow-dark);">(' + escapeHtml(year) + ')</span>' + badge + '</div>' +
         '<div class="spotlight-result-meta">' + escapeHtml(genreLabels) + '</div>' +
         '</div>' +
-        '<button class="clumsy-btn spotlight-play-btn">\u25B6 Play</button>' +
+        (isCurated ? '<button class="clumsy-btn spotlight-view-btn">View Review</button>' : '') +
         '</div>';
     });
 
     results.innerHTML = html;
 
-    // Wire play buttons
-    results.querySelectorAll('.spotlight-play-btn').forEach(function (btn) {
-      btn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        const card = btn.closest('.spotlight-result-card');
+    // Wire view buttons / card clicks for curated reviews
+    results.querySelectorAll('.spotlight-result-card.is-curated').forEach(function (card) {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', function () {
         const tmdbId = parseInt(card.dataset.tmdbId, 10);
-        const title = card.dataset.title;
-        const year = card.dataset.year;
-
-        // Find matching review for rich player experience
         const review = allReviews.find(function (r) { return Number(r.tmdb_id) === tmdbId; });
         if (review) {
-          openPlayer(review);
-        } else {
-          openPlayer({
-            tmdb_id: tmdbId,
-            title: title,
-            year: year || null,
-            reviewer: 'Cureus',
-            rating: 0,
-            review: '',
-            genres: [],
-            poster: null
-          });
+          closeSpotlight();
+          window.location.hash = '';
+          const cardEl = document.querySelector(`.review-card[data-id="${review.id}"]`);
+          if (cardEl) {
+            cardEl.scrollIntoView({ behavior: 'smooth' });
+          }
         }
-        closeSpotlight();
       });
     });
   }

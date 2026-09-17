@@ -485,15 +485,15 @@ h1, h2, h3, button, input, select, textarea {
   image-rendering: pixelated; /* Blown-up low-quality blocky look */
 }
 
-/* Watch + Delete button row inside feed */
+/* Admin delete button row inside feed */
 .review-actions {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 10px;
   margin-top: 10px;
 }
 
-/* Uniform height + icon sizing for both action buttons */
+/* Uniform height + icon sizing for action buttons */
 .review-actions .clumsy-btn {
   height: 48px;
   padding: 0 20px;
@@ -505,10 +505,13 @@ h1, h2, h3, button, input, select, textarea {
   flex-shrink: 0;
 }
 
-/* Admin-only delete button next to Watch Now (hidden unless logged in) */
+/* Admin-only delete button (hidden unless logged in) */
 .admin-delete-btn {
   display: none;
-  background: #ff8080; /* solid red, matches watch-now solidity */
+  background: #ff8080;
+}
+body.is-admin .review-actions {
+  display: flex;
 }
 body.is-admin .admin-delete-btn {
   display: block;
@@ -517,22 +520,7 @@ body.is-admin .admin-delete-btn:hover {
   background: #ff6b6b;
 }
 
-/* --- OVERLAY MODAL (XP Paint Window Parody) --- */
-#player-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 128, 128, 0.7); /* translucent teal desktop */
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
+/* --- RETRO WINDOW CONTAINERS (XP Paint Window Parody) --- */
 .paint-window {
   width: 90%;
   max-width: 1000px;
@@ -544,27 +532,6 @@ body.is-admin .admin-delete-btn:hover {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.window-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--paint-dark);
-  position: relative;
-}
-
-/* Maximized Player Iframe */
-.iframe-container {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.iframe-container iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
 }
 
 /* Close notice / helper */
@@ -996,14 +963,14 @@ body.is-admin .admin-delete-btn:hover {
   font-family: var(--font-clumsy);
 }
 
-.spotlight-play-btn {
+.spotlight-view-btn {
   flex-shrink: 0;
   font-size: 1.3rem;
   padding: 4px 14px;
   background: #90ee90;
 }
 
-.spotlight-play-btn:hover {
+.spotlight-view-btn:hover {
   background: #7dda7d;
 }
 

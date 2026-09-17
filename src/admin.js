@@ -372,7 +372,6 @@ function setupSearchActions() {
       
       results.forEach(item => {
         const title = item.title;
-        const type = 'movie';
         const date = item.release_date || '';
         const year = date ? date.split('-')[0] : 'N/A';
         const posterPath = item.poster_path || '';
