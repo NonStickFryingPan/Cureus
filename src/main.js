@@ -1,10 +1,12 @@
-import { fetchReviews } from './db.js';
-import { escapeHtml } from './utils.js';
+import { fetchReviews, deleteReview } from './db.js';
+import { escapeHtml, TMDB_GENRES } from './utils.js';
+import { supabase } from './supabase.js';
 
 // --- Application State (Functional Pattern) ---
 let allReviews = [];
-let currentGenre = null;
+let currentColor = '#000000';
 let activeTool = 'cursor'; // default pointer
+let isAdmin = false;
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
@@ -16,6 +18,16 @@ const paintColors = [
   '#ffffff', '#c0c0c0', '#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff'
 ];
 
+// Track admin auth state — reveals delete buttons on cards when logged in
+supabase.auth.onAuthStateChange((_event, newSession) => {
+  isAdmin = !!newSession;
+  document.body.classList.toggle('is-admin', isAdmin);
+});
+supabase.auth.getSession().then(({ data }) => {
+  isAdmin = !!data.session;
+  document.body.classList.toggle('is-admin', isAdmin);
+});
+
 // --- Initialize App ---
 document.addEventListener('DOMContentLoaded', async () => {
   setupDesktopCheck();
@@ -23,7 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupToolbar();
   setupMenuActions();
   setupHashRouter();
-  setupPlayerModal();
   setupReviewerModal();
   setupGlobalEscapeHandler();
   setupSpotlightSearch();
@@ -100,7 +111,7 @@ function setupHashRouter() {
       palette.style.display = 'flex';
       
       // Reset view size / canvas resize
-      resizeCanvas();
+      if (window.resizeCanvas) window.resizeCanvas();
     }
   };
   
@@ -160,7 +171,7 @@ function setupCanvasBoard() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    ctx.strokeStyle = '#000000';
+    ctx.strokeStyle = currentColor;
     
     if (activeTool === 'pencil') {
       ctx.lineWidth = 2;
@@ -170,7 +181,7 @@ function setupCanvasBoard() {
       ctx.stroke();
     } else if (activeTool === 'spray') {
       // Classic MS Paint spray paint scatter
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = currentColor;
       const density = 15;
       for (let i = 0; i < density; i++) {
         const angle = Math.random() * Math.PI * 2;
@@ -329,16 +340,8 @@ async function loadReviews() {
   try {
     allReviews = await fetchReviews();
     
-    // Derive unique genres
-    const uniqueGenres = new Set();
-    allReviews.forEach(r => {
-      if (Array.isArray(r.genres)) {
-        r.genres.forEach(g => uniqueGenres.add(g));
-      }
-    });
-    
-    // Set up Palette bar with unique genres
-    renderGenrePalette(Array.from(uniqueGenres));
+    // Set up Palette bar with drawing colors
+    renderColorPalette();
 
     // Initial shuffle and render
     shuffleAndRender();
@@ -380,15 +383,9 @@ function markAsSeen(id) {
 function shuffleAndRender() {
   const seenIds = getSeenIds();
   
-  // Filter by genre
-  let filtered = allReviews;
-  if (currentGenre) {
-    filtered = allReviews.filter(r => r.genres && r.genres.includes(currentGenre));
-  }
-
   // Split into unseen and seen (records are pre-deduplicated by db.js)
-  const unseen = filtered.filter(r => !seenIds.includes(r.id));
-  const seen = filtered.filter(r => seenIds.includes(r.id));
+  const unseen = allReviews.filter(r => !seenIds.includes(r.id));
+  const seen = allReviews.filter(r => seenIds.includes(r.id));
   
   // Fisher-Yates Shuffle
   const shuffle = (array) => {
@@ -422,7 +419,7 @@ function renderFeed(queue, allSeen) {
         <div style="text-align: center;">
           <h2 class="review-title" style="font-size: 3rem;">No reviews found</h2>
           <p style="font-family: var(--font-clumsy); font-size: 1.5rem; margin-top: 20px;">
-            Nothing curated for genre: <strong>${escapeHtml(currentGenre || 'All')}</strong> yet!
+            Nothing curated yet!
           </p>
         </div>
       </div>
@@ -431,7 +428,7 @@ function renderFeed(queue, allSeen) {
   }
 
   // Draw cards
-  queue.forEach((r, idx) => {
+  queue.forEach((r) => {
     const card = document.createElement('article');
     card.className = 'review-card';
     card.dataset.id = r.id;
@@ -463,9 +460,12 @@ function renderFeed(queue, allSeen) {
           <p class="review-text">${escapeHtml(displayText)}${shouldTruncate ? `<button class="read-more-btn" data-id="${r.id}" id="btn-more-${r.id}">...more</button>` : ''}</p>
         </div>
 
-        <button class="clumsy-btn watch-now-btn" id="btn-watch-${r.id}" data-id="${r.id}">
-          ▶ Watch Now
-        </button>
+        <div class="review-actions">
+          <button class="clumsy-btn admin-delete-btn" data-id="${r.id}" title="Delete from library">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V7H6V19zM19,4h-3.5l-1,-1h-5l-1,1H5v2h14V4z"/></svg>
+            Delete
+          </button>
+        </div>
       </div>
       
       <div class="review-right">
@@ -521,13 +521,19 @@ function setupFeedListeners() {
     });
   });
 
-  // Watch Now overlay triggers
-  document.querySelectorAll('.watch-now-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+  // Admin delete from homescreen (button only visible when logged in)
+  document.querySelectorAll('.admin-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
       const id = btn.dataset.id;
       const reviewObj = allReviews.find(r => r.id === id);
-      if (reviewObj) {
-        openPlayer(reviewObj);
+      if (!reviewObj) return;
+      if (!confirm(`Delete "${reviewObj.title}" from the library?`)) return;
+      try {
+        await deleteReview(id);
+        allReviews = allReviews.filter(r => r.id !== id);
+        btn.closest('.review-card').remove();
+      } catch (err) {
+        alert('Delete failed: ' + err.message);
       }
     });
   });
@@ -555,56 +561,26 @@ function setupSeenObserver() {
   cards.forEach(card => seenObserver.observe(card));
 }
 
-// --- Dynamic Genre Palette Renderer ---
-function renderGenrePalette(genres) {
+// --- Color Palette Renderer (picks drawing color) ---
+function renderColorPalette() {
   const paletteGrid = document.getElementById('genre-palette-grid');
   paletteGrid.innerHTML = '';
 
-  // Add a special 'ALL' color box (Gray standard Paint color)
-  const allBox = document.createElement('div');
-  allBox.className = `color-box ${currentGenre === null ? 'active' : ''}`;
-  allBox.style.backgroundColor = '#808080';
-  allBox.title = 'Show All Genres';
-  allBox.innerHTML = `<span class="color-label">All Genres</span>`;
-  allBox.id = 'color-box-all';
-  
-  allBox.addEventListener('click', () => {
-    currentGenre = null;
-    document.querySelectorAll('.color-box').forEach(b => b.classList.remove('active'));
-    allBox.classList.add('active');
-    
-    // Update active color blocks
-    const indicatorAll = document.querySelector('.selected-color-indicator');
-    if (indicatorAll) indicatorAll.style.backgroundColor = '#808080';
-    document.getElementById('status-selected-genre').textContent = 'Filter: NONE';
-    
-    shuffleAndRender();
-  });
-  
-  paletteGrid.appendChild(allBox);
-
-  // Render derived DB genres
-  genres.forEach((genre, index) => {
-    const color = paintColors[index % paintColors.length];
-    
+  paintColors.forEach((color, index) => {
     const box = document.createElement('div');
-    box.className = `color-box ${currentGenre === genre ? 'active' : ''}`;
+    box.className = `color-box ${color === currentColor ? 'active' : ''}`;
     box.style.backgroundColor = color;
-    box.title = `Filter by: ${genre}`;
-    box.innerHTML = `<span class="color-label">${escapeHtml(genre)}</span>`;
-    box.id = `color-box-${genre.toLowerCase().replace(/\s+/g, '-')}`;
+    box.title = color;
+    box.id = `color-box-${index}`;
     
     box.addEventListener('click', () => {
-      currentGenre = genre;
+      currentColor = color;
       document.querySelectorAll('.color-box').forEach(b => b.classList.remove('active'));
       box.classList.add('active');
       
-      // Update selected color indicator block
-      const indicatorColor = document.querySelector('.selected-color-indicator');
-      if (indicatorColor) indicatorColor.style.backgroundColor = color;
-      document.getElementById('status-selected-genre').textContent = `Filter: ${genre.toUpperCase()}`;
-      
-      shuffleAndRender();
+      // Update selected color indicator block (MS Paint style)
+      const indicator = document.querySelector('.selected-color-indicator');
+      if (indicator) indicator.style.backgroundColor = color;
     });
     
     paletteGrid.appendChild(box);
@@ -615,58 +591,11 @@ function renderGenrePalette(genres) {
 function setupGlobalEscapeHandler() {
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    const playerOverlay = document.getElementById('player-overlay');
     const reviewerOverlay = document.getElementById('reviewer-overlay');
-    if (playerOverlay.style.display === 'flex') {
-      playerOverlay.style.display = 'none';
-      document.getElementById('player-iframe-root').innerHTML = '';
-    } else if (reviewerOverlay.style.display === 'flex') {
+    if (reviewerOverlay && reviewerOverlay.style.display === 'flex') {
       reviewerOverlay.style.display = 'none';
     }
   });
-}
-
-// --- Watch Now Player Modal ---
-function setupPlayerModal() {
-  const overlay = document.getElementById('player-overlay');
-  const closeBtn = document.getElementById('btn-player-close');
-  
-  const close = () => {
-    overlay.style.display = 'none';
-    document.getElementById('player-iframe-root').innerHTML = ''; // Stop stream
-  };
-  
-  closeBtn.addEventListener('click', close);
-  
-  // Click overlay background to close
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) close();
-  });
-  
-}
-
-function openPlayer(review) {
-  const overlay = document.getElementById('player-overlay');
-  const titleSpan = document.getElementById('player-window-title');
-  const iframeContainer = document.getElementById('player-iframe-root');
-  
-  titleSpan.textContent = `${review.title} (${review.year}) - Cureus Player`;
-  
-  // Format embed URL
-  const embedUrl = `https://www.vidking.net/embed/movie/${review.tmdb_id}?autoPlay=true`;
-  
-  // Inject Iframe
-  iframeContainer.innerHTML = `
-    <iframe 
-      id="stream-frame"
-      src="${embedUrl}"
-      allow="autoplay; fullscreen" 
-      allowfullscreen
-      title="${escapeHtml(review.title)} playback stream">
-    </iframe>
-  `;
-  
-  overlay.style.display = 'flex';
 }
 
 // --- Reviewer Application Dialog Box Parody ---
@@ -745,14 +674,6 @@ function setupSpotlightSearch() {
   const SEARCH_FAST_LIMIT = 30;
   let searchTimer = null;
   let curatedIds = new Set();
-
-  // TMDB genre ID mapping for result labels
-  const GENRE_NAMES = {
-    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
-    99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
-    27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
-    10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western'
-  };
 
   // Load curated movie IDs from our DB
   async function loadCuratedIds() {
@@ -869,48 +790,36 @@ function setupSpotlightSearch() {
       const badge = isCurated ? '<span class="spotlight-curated-badge">[CURATED]</span>' : '';
 
       const genreLabels = (movie.genre_ids || [])
-        .map(function (id) { return GENRE_NAMES[id]; })
+        .map(function (id) { return TMDB_GENRES[id]; })
         .filter(Boolean)
         .join(', ') || 'Movie';
 
-      html += '<div class="spotlight-result-card" data-tmdb-id="' + movie.id + '" data-title="' + escapeHtml(title) + '" data-year="' + escapeHtml(year) + '">' +
+      html += '<div class="spotlight-result-card' + (isCurated ? ' is-curated' : '') + '" data-tmdb-id="' + movie.id + '" data-title="' + escapeHtml(title) + '" data-year="' + escapeHtml(year) + '">' +
         '<img src="' + posterSrc + '" alt="' + escapeHtml(title) + '" loading="lazy">' +
         '<div class="spotlight-result-info">' +
         '<div class="spotlight-result-title">' + escapeHtml(title) + ' <span style="font-size:0.9rem;color:var(--paint-shadow-dark);">(' + escapeHtml(year) + ')</span>' + badge + '</div>' +
         '<div class="spotlight-result-meta">' + escapeHtml(genreLabels) + '</div>' +
         '</div>' +
-        '<button class="clumsy-btn spotlight-play-btn">\u25B6 Play</button>' +
+        (isCurated ? '<button class="clumsy-btn spotlight-view-btn">View Review</button>' : '') +
         '</div>';
     });
 
     results.innerHTML = html;
 
-    // Wire play buttons
-    results.querySelectorAll('.spotlight-play-btn').forEach(function (btn) {
-      btn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        const card = btn.closest('.spotlight-result-card');
+    // Wire view buttons / card clicks for curated reviews
+    results.querySelectorAll('.spotlight-result-card.is-curated').forEach(function (card) {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', function () {
         const tmdbId = parseInt(card.dataset.tmdbId, 10);
-        const title = card.dataset.title;
-        const year = card.dataset.year;
-
-        // Find matching review for rich player experience
         const review = allReviews.find(function (r) { return Number(r.tmdb_id) === tmdbId; });
         if (review) {
-          openPlayer(review);
-        } else {
-          openPlayer({
-            tmdb_id: tmdbId,
-            title: title,
-            year: year || null,
-            reviewer: 'Cureus',
-            rating: 0,
-            review: '',
-            genres: [],
-            poster: null
-          });
+          closeSpotlight();
+          window.location.hash = '';
+          const cardEl = document.querySelector(`.review-card[data-id="${review.id}"]`);
+          if (cardEl) {
+            cardEl.scrollIntoView({ behavior: 'smooth' });
+          }
         }
-        closeSpotlight();
       });
     });
   }

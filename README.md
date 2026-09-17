@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🎨 Cureus
-**Curated streaming reviews served in a 90s Windows XP Paint parody**
+**Curated movie reviews served in a 90s Windows XP Paint parody**
 
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
@@ -16,7 +16,7 @@
 
 ## About
 
-Cureus is a single-page desktop-only review site that mimics the look and feel of Microsoft Paint from Windows XP. Scroll through handpicked movie reviews, filter by genre via the color palette, scribble doodles over the feed, and watch movies directly through the embedded player.
+Cureus is a single-page desktop-only review site that mimics the look and feel of Microsoft Paint from Windows XP. Scroll through handpicked movie reviews, filter by genre via the color palette, and scribble doodles over the feed.
 
 Built as a playful project.
 

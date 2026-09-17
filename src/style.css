@@ -279,25 +279,6 @@ h1, h2, h3, button, input, select, textarea {
   left: 1px;
 }
 
-.color-label {
-  font-family: var(--font-pixel);
-  font-size: 1rem;
-  margin-left: 5px;
-  white-space: nowrap;
-  pointer-events: none;
-  background: rgba(255,255,255,0.7);
-  padding: 0 4px;
-  border: 1px solid var(--paint-dark);
-  display: none;
-  position: absolute;
-  bottom: 25px;
-  z-index: 100;
-}
-
-.color-box:hover .color-label {
-  display: block;
-}
-
 /* Status Bar at the bottom */
 .status-bar {
   background: var(--paint-bg);
@@ -358,7 +339,7 @@ h1, h2, h3, button, input, select, textarea {
   -webkit-overflow-scrolling: touch;
   position: relative;
   z-index: 1;
-}
+  user-select: text; /* allow text selection/copy in the feed */}
 
 /* Snap card */
 .review-card {
@@ -504,28 +485,42 @@ h1, h2, h3, button, input, select, textarea {
   image-rendering: pixelated; /* Blown-up low-quality blocky look */
 }
 
-/* Watch button inside feed */
-.watch-now-btn {
-  align-self: flex-start;
+/* Admin delete button row inside feed */
+.review-actions {
+  display: none;
+  align-items: center;
+  gap: 10px;
   margin-top: 10px;
 }
 
-/* --- OVERLAY MODAL (XP Paint Window Parody) --- */
-#player-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 128, 128, 0.7); /* translucent teal desktop */
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+/* Uniform height + icon sizing for action buttons */
+.review-actions .clumsy-btn {
+  height: 48px;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+.review-actions svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
+/* Admin-only delete button (hidden unless logged in) */
+.admin-delete-btn {
+  display: none;
+  background: #ff8080;
+}
+body.is-admin .review-actions {
+  display: flex;
+}
+body.is-admin .admin-delete-btn {
+  display: block;
+}
+body.is-admin .admin-delete-btn:hover {
+  background: #ff6b6b;
+}
+
+/* --- RETRO WINDOW CONTAINERS (XP Paint Window Parody) --- */
 .paint-window {
   width: 90%;
   max-width: 1000px;
@@ -537,27 +532,6 @@ h1, h2, h3, button, input, select, textarea {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.window-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--paint-dark);
-  position: relative;
-}
-
-/* Maximized Player Iframe */
-.iframe-container {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.iframe-container iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
 }
 
 /* Close notice / helper */
@@ -989,14 +963,14 @@ h1, h2, h3, button, input, select, textarea {
   font-family: var(--font-clumsy);
 }
 
-.spotlight-play-btn {
+.spotlight-view-btn {
   flex-shrink: 0;
   font-size: 1.3rem;
   padding: 4px 14px;
   background: #90ee90;
 }
 
-.spotlight-play-btn:hover {
+.spotlight-view-btn:hover {
   background: #7dda7d;
 }
 

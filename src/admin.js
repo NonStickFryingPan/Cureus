@@ -1,18 +1,8 @@
 import { supabase } from './supabase.js';
 import { fetchReviews, saveReview, deleteReview } from './db.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, TMDB_GENRES } from './utils.js';
 
 let isSubmitting = false;
-
-// TMDB Genre ID lookup map
-const TMDB_GENRES = {
-  28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
-  99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
-  27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Science Fiction',
-  10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western',
-  10759: 'Action & Adventure', 10762: 'Kids', 10763: 'News', 10764: 'Reality',
-  10765: 'Sci-Fi & Fantasy', 10766: 'Soap', 10767: 'Talk', 10768: 'War & Politics'
-};
 
 // Admin State
 let session = null;
@@ -29,6 +19,7 @@ export async function initAdmin() {
   initialized = true;
   setupAuthListeners();
   setupSearchActions();
+  setupDbSearch();
   setupFormSubmit();
   setupLogoutAction();
   
@@ -119,7 +110,6 @@ function setupLogoutAction() {
 // --- Form Reset/Clear ---
 function clearForm() {
   document.getElementById('form-review-id').value = '';
-  document.getElementById('form-type').value = 'movie';
   document.getElementById('form-title').value = '';
   document.getElementById('form-tmdb-id').value = '';
   document.getElementById('form-year').value = '';
@@ -141,7 +131,6 @@ function setupFormSubmit() {
     isSubmitting = true;
 
     const id = document.getElementById('form-review-id').value;
-    const type = document.getElementById('form-type').value;
     const title = document.getElementById('form-title').value;
     const tmdb_id = parseInt(document.getElementById('form-tmdb-id').value, 10);
     const year = parseInt(document.getElementById('form-year').value, 10) || null;
@@ -199,6 +188,70 @@ function setupFormSubmit() {
 }
 
 // --- Fetch and Display Database Reviews ---
+function filterDbReviews(q) {
+  if (!q) return currentReviews;
+  return currentReviews.filter(r =>
+    r.title.toLowerCase().includes(q) ||
+    (r.genres || []).some(g => g.toLowerCase().includes(q)) ||
+    (r.reviewer || '').toLowerCase().includes(q)
+  );
+}
+
+function renderAdminDbList(list) {
+  const container = document.getElementById('admin-reviews-list');
+  container.innerHTML = '';
+  
+  if (list.length === 0) {
+    container.innerHTML = '<div style="font-size: 0.9rem; color:#888;">No reviews match.</div>';
+    return;
+  }
+  
+  list.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'search-card';
+    card.style.justifyContent = 'space-between';
+    card.id = `admin-db-card-${r.id}`;
+    
+    const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+    
+    card.innerHTML = `
+      <div style="display: flex; gap: 10px;">
+        <img src="https://image.tmdb.org/t/p/w92${escapeHtml(r.poster)}" alt="Poster">
+        <div class="search-card-info">
+          <div class="search-card-title">${escapeHtml(r.title)} <span style="font-size:0.9rem;">(${escapeHtml(r.year)})</span></div>
+          <div class="search-card-meta">Movie | ${stars}</div>
+          <div class="search-card-meta" style="font-style: italic;">By ${escapeHtml(r.reviewer)}</div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; justify-content: center; gap: 5px;">
+        <button class="clumsy-btn edit-db-btn" data-id="${r.id}" style="font-size: 1rem; padding: 2px 8px; background: #e0f0ff;" id="btn-edit-${r.id}">Edit</button>
+        <button class="clumsy-btn delete-db-btn" data-id="${r.id}" style="font-size: 1rem; padding: 2px 8px; background: #ffe0e0;" id="btn-delete-${r.id}">Delete</button>
+      </div>
+    `;
+    
+    // Attach fallback for broken poster images
+    const posterImg = card.querySelector('img');
+    if (posterImg) {
+      posterImg.addEventListener('error', () => {
+        posterImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="92" height="138"><rect width="100%" height="100%" fill="%23ccc"/></svg>';
+      });
+    }
+    
+    container.appendChild(card);
+  });
+  
+  // Bind edit/delete clicks
+  setupDbListListeners();
+}
+
+function setupDbSearch() {
+  const input = document.getElementById('input-db-search');
+  if (!input) return;
+  input.addEventListener('input', () => {
+    renderAdminDbList(filterDbReviews(input.value.trim().toLowerCase()));
+  });
+}
+
 async function loadAdminReviewsList() {
   const container = document.getElementById('admin-reviews-list');
   container.innerHTML = '<div style="font-size: 0.9rem; color:#888;">Fetching current library...</div>';
@@ -206,49 +259,10 @@ async function loadAdminReviewsList() {
   try {
     // Fetch reviews using deep DB module
     currentReviews = await fetchReviews();
-    container.innerHTML = '';
     
-    if (currentReviews.length === 0) {
-      container.innerHTML = '<div style="font-size: 0.9rem; color:#888;">No reviews in the database yet.</div>';
-      return;
-    }
-    
-    currentReviews.forEach(r => {
-      const card = document.createElement('div');
-      card.className = 'search-card';
-      card.style.justifyContent = 'space-between';
-      card.id = `admin-db-card-${r.id}`;
-      
-      const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
-      
-      card.innerHTML = `
-        <div style="display: flex; gap: 10px;">
-          <img src="https://image.tmdb.org/t/p/w92${escapeHtml(r.poster)}" alt="Poster">
-          <div class="search-card-info">
-            <div class="search-card-title">${escapeHtml(r.title)} <span style="font-size:0.9rem;">(${escapeHtml(r.year)})</span></div>
-            <div class="search-card-meta">Movie | ${stars}</div>
-            <div class="search-card-meta" style="font-style: italic;">By ${escapeHtml(r.reviewer)}</div>
-          </div>
-        </div>
-        <div style="display: flex; flex-direction: column; justify-content: center; gap: 5px;">
-          <button class="clumsy-btn edit-db-btn" data-id="${r.id}" style="font-size: 1rem; padding: 2px 8px; background: #e0f0ff;" id="btn-edit-${r.id}">Edit</button>
-          <button class="clumsy-btn delete-db-btn" data-id="${r.id}" style="font-size: 1rem; padding: 2px 8px; background: #ffe0e0;" id="btn-delete-${r.id}">Delete</button>
-        </div>
-      `;
-      
-      // Attach fallback for broken poster images
-      const posterImg = card.querySelector('img');
-      if (posterImg) {
-        posterImg.addEventListener('error', () => {
-          posterImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="92" height="138"><rect width="100%" height="100%" fill="%23ccc"/></svg>';
-        });
-      }
-      
-      container.appendChild(card);
-    });
-    
-    // Bind edit/delete clicks
-    setupDbListListeners();
+    // Re-apply any active filter after reload
+    const q = (document.getElementById('input-db-search').value || '').trim().toLowerCase();
+    renderAdminDbList(filterDbReviews(q));
 
   } catch (err) {
     console.error('Error fetching admin reviews list:', err);
@@ -265,7 +279,6 @@ function setupDbListListeners() {
       const r = currentReviews.find(item => item.id === id);
       if (r) {
         document.getElementById('form-review-id').value = r.id;
-        document.getElementById('form-type').value = r.type;
         document.getElementById('form-title').value = r.title;
         document.getElementById('form-tmdb-id').value = r.tmdb_id;
         document.getElementById('form-year').value = r.year || '';
@@ -359,7 +372,6 @@ function setupSearchActions() {
       
       results.forEach(item => {
         const title = item.title;
-        const type = 'movie';
         const date = item.release_date || '';
         const year = date ? date.split('-')[0] : 'N/A';
         const posterPath = item.poster_path || '';
@@ -396,7 +408,6 @@ function setupSearchActions() {
           if (existing) {
             // Populate form with existing curated review for editing
             document.getElementById('form-review-id').value = existing.id;
-            document.getElementById('form-type').value = 'movie';
             document.getElementById('form-title').value = existing.title;
             document.getElementById('form-tmdb-id').value = existing.tmdb_id;
             document.getElementById('form-year').value = existing.year || '';
@@ -413,7 +424,6 @@ function setupSearchActions() {
           } else {
             // Populate form with TMDB metadata to create a new review
             document.getElementById('form-review-id').value = '';
-            document.getElementById('form-type').value = 'movie';
             document.getElementById('form-title').value = title;
             document.getElementById('form-tmdb-id').value = item.id;
             document.getElementById('form-year').value = year !== 'N/A' ? year : '';

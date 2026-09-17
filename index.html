@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cureus</title>
-  <meta name="description" content="A single-page, curated streaming review site with a clumsy 90s Windows XP Paint aesthetic. Desktop-only, custom reviews, direct play.">
+  <meta name="description" content="A single-page, curated movie review site with a clumsy 90s Windows XP Paint aesthetic. Desktop-only, custom reviews.">
   <link rel="stylesheet" href="/src/style.css">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M4 16 C4 6, 28 6, 28 16 C28 26, 18 28, 12 28 C6 28, 4 22, 4 16 Z' fill='%23ece9d8' stroke='%23000000' stroke-width='2'/><circle cx='10' cy='12' r='3' fill='%23ff0000' stroke='%23000' stroke-width='1.5'/><circle cx='18' cy='11' r='3' fill='%23ffff00' stroke='%23000' stroke-width='1.5'/><circle cx='23' cy='16' r='3' fill='%2300ff00' stroke='%23000' stroke-width='1.5'/><circle cx='18' cy='21' r='3' fill='%230000ff' stroke='%23000' stroke-width='1.5'/><circle cx='10' cy='22' r='2' fill='%23808080' stroke='%23000' stroke-width='1.5'/></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><line x1='12' y1='10' x2='6' y2='3' stroke='%230a0a0a' stroke-width='2' stroke-linecap='round'/><line x1='20' y1='10' x2='26' y2='3' stroke='%230a0a0a' stroke-width='2' stroke-linecap='round'/><circle cx='6' cy='3' r='1.5' fill='%23e04343' stroke='%230a0a0a' stroke-width='1'/><circle cx='26' cy='3' r='1.5' fill='%23e04343' stroke='%230a0a0a' stroke-width='1'/><rect x='6' y='28' width='4' height='3' rx='1' fill='%230a0a0a'/><rect x='22' y='28' width='4' height='3' rx='1' fill='%230a0a0a'/><rect x='3' y='9' width='26' height='19' rx='2' fill='%23d4d0c8' stroke='%230a0a0a' stroke-width='2'/><rect x='5' y='11' width='16' height='15' rx='1' fill='%23ece9d8' stroke='%230a0a0a' stroke-width='1.5'/><rect x='6' y='12' width='14' height='13' rx='1' fill='%230054e3' stroke='%230a0a0a' stroke-width='1'/><path d='M7 13 L12 13 L7 18 Z' fill='white' opacity='0.4'/><circle cx='25' cy='14' r='2' fill='%23ece9d8' stroke='%230a0a0a' stroke-width='1.5'/><line x1='25' y1='14' x2='26.5' y2='12.5' stroke='%230a0a0a' stroke-width='1.5'/><circle cx='25' cy='19.5' r='2' fill='%23ece9d8' stroke='%230a0a0a' stroke-width='1.5'/><line x1='25' y1='19.5' x2='23.5' y2='19.5' stroke='%230a0a0a' stroke-width='1.5'/><line x1='23' y1='23' x2='27' y2='23' stroke='%230a0a0a' stroke-width='1' stroke-linecap='round'/><line x1='23' y1='24.5' x2='27' y2='24.5' stroke='%230a0a0a' stroke-width='1' stroke-linecap='round'/><circle cx='25' cy='26.5' r='1' fill='%23ff0000'/></svg>">
 </head>
 <body>
 
@@ -129,9 +129,6 @@
                 <form id="review-form" onsubmit="return false;">
                   <input type="hidden" id="form-review-id">
                   
-                  <!-- Type is locked to Movie -->
-                  <input type="hidden" id="form-type" value="movie">
-                  
                   <div class="form-group" style="margin-bottom: 10px;">
                     <label for="form-title">Title</label>
                     <input class="clumsy-input" type="text" id="form-title" placeholder="e.g. Pulp Fiction" required>
@@ -211,6 +208,7 @@
                 <!-- Existing reviews database list -->
                 <div class="clumsy-box">
                   <h3 style="font-size: 1.5rem; margin-bottom: 10px; border-bottom: 2px solid #000;">📚 Existing Reviews</h3>
+                  <input class="clumsy-input" type="text" id="input-db-search" placeholder="Filter by title, genre, or reviewer..." style="width: 100%; margin-bottom: 10px;">
                   <div id="admin-reviews-list" class="search-results" style="max-height: 350px;">
                     <!-- Existing database reviews populated by JS -->
                   </div>
@@ -279,7 +277,7 @@ INSTRUCTIONS FOR USE:
       </div>
       
       <div style="font-family: var(--font-pixel); font-size: 1rem; color: #404040; margin-left: auto;">
-        Palette = Genre Filter
+        Palette = Drawing Color
       </div>
     </nav>
 
@@ -288,44 +286,12 @@ INSTRUCTIONS FOR USE:
       <div>For Help, click Help in the menu bar.</div>
       <div style="display: flex; gap: 20px;">
         <div class="status-field" id="status-coordinates">Cursor: 0, 0px</div>
-        <div class="status-field" id="status-selected-genre">Filter: NONE</div>
         <div class="status-field" id="status-editor">Editor: Guest</div>
       </div>
     </footer>
 
   </div>
 
-  <!-- 3. FULLSCREEN PLAYBACK OVERLAY (XP Paint Window Parody) -->
-  <div id="player-overlay">
-    <div class="paint-window">
-      <!-- Window Title Bar -->
-      <div class="clumsy-title-bar">
-        <span id="player-window-title">Stream Player v1.02</span>
-        <button class="clumsy-close-btn" id="btn-player-close" title="Close Player" aria-label="Close Player">X</button>
-      </div>
-
-      <!-- Window Fake Menu Bar -->
-      <div class="window-fake-menu">
-        <span>File</span>
-        <span>Playback</span>
-        <span>Quality (Auto)</span>
-        <span>Help</span>
-      </div>
-
-      <!-- Window Body (Fullscreen Iframe) -->
-      <div class="window-body">
-        <div class="iframe-container" id="player-iframe-root">
-          <!-- Iframe will be injected dynamically here -->
-        </div>
-      </div>
-
-      <!-- Status Bar -->
-      <div class="status-bar" style="border-top: 3px solid #000;">
-        <div>Connected via direct stream. Enjoy the taste.</div>
-        <div class="status-field">1080p | stereo</div>
-      </div>
-    </div>
-  </div>
 
   <!-- 4. AUTH / LOGIN OVERLAY WINDOW -->
   <div id="auth-overlay">
