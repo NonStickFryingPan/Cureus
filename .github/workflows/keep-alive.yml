@@ -17,6 +17,6 @@ jobs:
           code=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "apikey: $ANON_KEY" \
             -H "Authorization: Bearer $ANON_KEY" \
-            "$SUPABASE_URL/rest/v1/")
+            "$SUPABASE_URL/rest/v1/reviews?select=id&limit=1")
           echo "status: $code"
-          [ "$code" -eq 200 ] || [ "$code" -eq 401 ] || { echo "might be paused"; exit 1; }
+          [ "$code" -eq 200 ] || { echo "might be paused or failed: $code"; exit 1; }
